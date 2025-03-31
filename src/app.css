@@ -1,0 +1,27 @@
+@font-face {
+    font-family: FontBody;
+    src: url("./fonts/Quicksand/Quicksand-VariableFont_wght.ttf");
+}
+
+@font-face {
+    font-family: FontTitle;
+    src: url("./fonts/Quicksand/static/Quicksand-Bold.ttf");
+
+}
+
+@font-face {
+    font-family: NavFont;
+    src: "./fonts/Faustina/static/Faustina-SemiBold.ttf";
+}
+
+.FontBody {
+    font-family: FontBody;
+}
+
+.FontTitle {
+    font-family: FontTitle;
+}
+
+.NavFont {
+    font-family: NavFont;
+}
