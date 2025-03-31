@@ -30,7 +30,7 @@
             <div class="col">
                 <div class="card h-100 border-0 bg-light hover-card">
                     <img
-                        src="/src/lib/images/user.png"
+                        src="/src/lib/assets/images/user.png"
                         alt="Desarrollador Web"
                         class="card-img-top rounded-circle w-75 mx-auto mt-4"
                     />
@@ -49,7 +49,7 @@
             <div class="col">
                 <div class="card h-100 border-0 bg-light hover-card">
                     <img
-                        src="/src/lib/images/user.png"
+                        src="/src/lib/assets/images/user.png"
                         alt="Diseñadora de Moda"
                         class="card-img-top rounded-circle w-75 mx-auto mt-4"
                     />
@@ -68,7 +68,7 @@
             <div class="col">
                 <div class="card h-100 border-0 bg-light hover-card">
                     <img
-                        src="/src/lib/images/user.png"
+                        src="/src/lib/assets/images/user.png"
                         alt="Directora Financiera"
                         class="card-img-top rounded-circle w-75 mx-auto mt-4"
                     />

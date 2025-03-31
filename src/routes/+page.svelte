@@ -7,7 +7,7 @@
                 class="col-md-6 d-flex justify-content-center align-items-center"
             >
                 <img
-                    src="/src/lib/images/logo.jpg"
+                    src="/src/lib/assets/images/logo.jpg"
                     class="img-fluid rounded-circle"
                     alt="Colección Urban Empire"
                     width="420px"
@@ -167,7 +167,7 @@
                         <div class="carousel-inner">
                             <div class="carousel-item active">
                                 <img
-                                    src="/src/lib/images/prod-3.jpg"
+                                    src="/src/lib/assets/images/prod-3.jpg"
                                     class="d-block w-100 img-fluid"
                                     alt="Nueva Colección"
                                 />
@@ -183,7 +183,7 @@
                             </div>
                             <div class="carousel-item">
                                 <img
-                                    src="/src/lib/images/prod-2.jpg"
+                                    src="/src/lib/assets/images/prod-2.jpg"
                                     class="d-block w-100"
                                     alt="Edición Limitada"
                                 />
@@ -199,7 +199,7 @@
                             </div>
                             <div class="carousel-item">
                                 <img
-                                    src="/src/lib/images/prod-1.jpg"
+                                    src="/src/lib/assets/images/prod-1.jpg"
                                     class="d-block w-100"
                                     alt="Techwear"
                                 />
