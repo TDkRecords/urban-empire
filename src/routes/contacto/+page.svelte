@@ -1,5 +1,7 @@
 <script>
     import "../../app.css";
+    import AxelProfile from "$lib/assets/images/cv-profile.jpg";
+    import DanielProfile from "$lib/assets/images/Image-Profile-Daniel.jpg";
 
     const onSubmitHandler = () => {
         alert("¡Mensaje enviado con éxito!");
@@ -30,9 +32,9 @@
             <div class="col">
                 <div class="card h-100 border-0 bg-light hover-card">
                     <img
-                        src="/src/lib/assets/images/user.png"
+                        src={AxelProfile}
                         alt="Desarrollador Web"
-                        class="card-img-top rounded-circle w-75 mx-auto mt-4"
+                        class="card-img-top rounded-circle w-75 mx-auto mt-4 img_aspect"
                     />
                     <div class="card-body text-center">
                         <h3 class="FontTitle mb-3">Alex</h3>
@@ -49,9 +51,9 @@
             <div class="col">
                 <div class="card h-100 border-0 bg-light hover-card">
                     <img
-                        src="/src/lib/assets/images/user.png"
+                        src={DanielProfile}
                         alt="Diseñadora de Moda"
-                        class="card-img-top rounded-circle w-75 mx-auto mt-4"
+                        class="card-img-top rounded-circle w-75 mx-auto mt-4 img_aspect"
                     />
                     <div class="card-body text-center">
                         <h3 class="FontTitle mb-3">Daniel</h3>
@@ -70,7 +72,7 @@
                     <img
                         src="/src/lib/assets/images/user.png"
                         alt="Directora Financiera"
-                        class="card-img-top rounded-circle w-75 mx-auto mt-4"
+                        class="card-img-top rounded-circle w-75 mx-auto mt-4 img_aspect"
                     />
                     <div class="card-body text-center">
                         <h3 class="FontTitle mb-3">Angela</h3>
@@ -156,5 +158,9 @@
 
     .border-dark {
         border: 2px solid #333 !important;
+    }
+
+    .img_aspect {
+        aspect-ratio: 1/1;
     }
 </style>
