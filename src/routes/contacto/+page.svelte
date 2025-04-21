@@ -2,6 +2,7 @@
     import "../../app.css";
     import AxelProfile from "$lib/assets/images/cv-profile.jpg";
     import DanielProfile from "$lib/assets/images/Image-Profile-Daniel.jpg";
+    import AngelaProfile from "$lib/assets/images/Image-Profile-Angela.jpg";
     import { fade, fly, scale } from "svelte/transition";
 
     const onSubmitHandler = () => {
@@ -32,14 +33,14 @@
             <a
                 href="mailto:contacto@urbanempire.com"
                 class="FontBody text-decoration-none text-dark fw-bold email-link"
-                in:scale={{ duration: 500 }}>contacto@urbanempire.com</a
+                in:scale={{ duration: 500 }}>urbanempire.colombia@gmail.com</a
             >
         </div>
 
         <!-- Equipo -->
         <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
             <!-- Tarjeta miembro -->
-            {#each [{ src: AxelProfile, name: "Alex", role: "Desarrollador Full Stack - Encargado de la plataforma web y experiencia digital. Especialista en e-commerce." }, { src: DanielProfile, name: "Daniel", role: "Diseñador Principal - Creador de nuestras colecciones y supervisor de producción. Experto en tejidos técnicos." }, { src: "/src/lib/assets/images/user.png", name: "Angela", role: "Directora Financiera - Gestión de pedidos y logística. Especialista en comercio internacional y aduanas." }] as member, i}
+            {#each [{ src: AxelProfile, name: "Alex", role: "Desarrollador Full Stack - Encargado de la plataforma web y experiencia digital. Especialista en e-commerce." }, { src: DanielProfile, name: "Daniel", role: "Diseñador Principal - Creador de nuestras colecciones y supervisor de producción. Experto en tejidos técnicos." }, { src: AngelaProfile, name: "Angela", role: "Directora Financiera - Gestión de pedidos y logística. Especialista en comercio internacional y aduanas." }] as member, i}
                 <div
                     class="col"
                     in:fly={{ y: 50, duration: 600, delay: 200 * i }}

@@ -2,10 +2,26 @@
     import { fly, fade, scale } from "svelte/transition";
     let email = "";
     const socialLinks = [
-        { name: "Facebook", icon: "fab fa-facebook-f", url: "/" },
-        { name: "Twitter", icon: "fab fa-twitter", url: "/" },
-        { name: "Instagram", icon: "fab fa-instagram", url: "/" },
-        { name: "LinkedIn", icon: "fab fa-linkedin-in", url: "/" },
+        {
+            name: "Facebook",
+            icon: "fab fa-facebook-f",
+            url: "https://www.facebook.com/profile.php?id=61572705947719",
+        },
+        {
+            name: "Twitter",
+            icon: "fab fa-twitter",
+            url: "https://x.com/_axeljosh_",
+        },
+        {
+            name: "Instagram",
+            icon: "fab fa-instagram",
+            url: "https://www.instagram.com/_axeljosh_/",
+        },
+        {
+            name: "LinkedIn",
+            icon: "fab fa-whatsapp",
+            url: "https://wa.me/573159603020",
+        },
     ];
     const submitNewsletter = () => {
         alert(`Gracias por suscribirte, ${email}!`);
