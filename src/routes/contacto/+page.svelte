@@ -40,7 +40,7 @@
         <!-- Equipo -->
         <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
             <!-- Tarjeta miembro -->
-            {#each [{ src: AxelProfile, name: "Alex", role: "Desarrollador Full Stack - Encargado de la plataforma web y experiencia digital. Especialista en e-commerce." }, { src: DanielProfile, name: "Daniel", role: "Diseñador Principal - Creador de nuestras colecciones y supervisor de producción. Experto en tejidos técnicos." }, { src: AngelaProfile, name: "Angela", role: "Directora Financiera - Gestión de pedidos y logística. Especialista en comercio internacional y aduanas." }] as member, i}
+            {#each [{ src: AxelProfile, name: "Axel Josh", role: "Desarrollador Full Stack - Encargado de la plataforma web y experiencia digital. Especialista en e-commerce." }, { src: DanielProfile, name: "Daniel Castro", role: "Diseñador Principal - Creador de nuestras colecciones y supervisor de producción. Experto en tejidos técnicos." }, { src: AngelaProfile, name: "Angela Palmas", role: "Directora Financiera - Gestión de pedidos y logística. Especialista en comercio internacional y aduanas." }] as member, i}
                 <div
                     class="col"
                     in:fly={{ y: 50, duration: 600, delay: 200 * i }}
