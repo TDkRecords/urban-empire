@@ -20,26 +20,22 @@
             <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link" aria-current="page" href="/">
-                        Home
-                        <i class="fa-solid fa-house"></i>
+                        Home <i class="fa-solid fa-house"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/">
-                        Productos
-                        <i class="fa-solid fa-bag-shopping"></i>
+                    <a class="nav-link" href="/productos">
+                        Productos <i class="fa-solid fa-bag-shopping"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/">
-                        Acerca de
-                        <i class="fa-solid fa-circle-info"></i>
+                    <a class="nav-link" href="/about">
+                        Acerca de <i class="fa-solid fa-circle-info"></i>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/contacto">
-                        Contacto
-                        <i class="fa-solid fa-user-tie"></i>
+                        Contacto <i class="fa-solid fa-user-tie"></i>
                     </a>
                 </li>
             </ul>
@@ -48,12 +44,54 @@
 </nav>
 
 <style>
-    a {
+    .navbar .nav-link {
+        position: relative;
         color: #00ccff;
+        text-decoration: none;
         transition: color 125ms ease-out;
     }
-    a:hover {
-        text-decoration: underline;
+
+    .navbar .nav-link::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: #00ccff;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 300ms ease-out;
+    }
+
+    .navbar .nav-link:hover {
         color: whitesmoke;
+    }
+
+    .navbar .nav-link:hover::after {
+        transform: scaleX(1);
+    }
+
+    .navbar .navbar-brand {
+        position: relative;
+        transition: color 125ms ease-out;
+    }
+    .navbar .navbar-brand::after {
+        content: "";
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: #00ccff;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 300ms ease-out;
+    }
+    .navbar .navbar-brand:hover {
+        color: whitesmoke;
+    }
+    .navbar .navbar-brand:hover::after {
+        transform: scaleX(1);
     }
 </style>

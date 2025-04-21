@@ -2,88 +2,67 @@
     import "../../app.css";
     import AxelProfile from "$lib/assets/images/cv-profile.jpg";
     import DanielProfile from "$lib/assets/images/Image-Profile-Daniel.jpg";
+    import { fade, fly, scale } from "svelte/transition";
 
     const onSubmitHandler = () => {
         alert("¡Mensaje enviado con éxito!");
     };
 </script>
 
-<main class="container">
-    <div class="bg-white p-4 my-3 rounded shadow-sm">
+<main class="container" in:fade={{ duration: 500 }}>
+    <div
+        class="bg-white p-4 my-3 rounded shadow-sm"
+        in:fly={{ y: 50, duration: 600 }}
+    >
         <!-- Encabezado -->
-        <div class="text-center mb-5">
-            <h1 class="FontTitle text-uppercase mb-3">
+        <div class="text-center mb-5" in:fade={{ delay: 200, duration: 600 }}>
+            <h1
+                class="FontTitle text-uppercase mb-3 header-title"
+                in:fly={{ x: -100, duration: 500 }}
+            >
                 Contacta al Equipo Urban Empire
             </h1>
-            <p class="FontBody lead mb-2">
+            <p
+                class="FontBody lead mb-2"
+                in:fly={{ x: 100, duration: 500, delay: 100 }}
+            >
                 ¿Necesitas ayuda personalizada? Escríbenos o contacta
                 directamente a nuestro equipo especializado
             </p>
             <a
                 href="mailto:contacto@urbanempire.com"
-                class="FontBody text-decoration-none text-dark fw-bold"
-                >contacto@urbanempire.com</a
+                class="FontBody text-decoration-none text-dark fw-bold email-link"
+                in:scale={{ duration: 500 }}>contacto@urbanempire.com</a
             >
         </div>
 
         <!-- Equipo -->
         <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
-            <!-- Programador -->
-            <div class="col">
-                <div class="card h-100 border-0 bg-light hover-card">
-                    <img
-                        src={AxelProfile}
-                        alt="Desarrollador Web"
-                        class="card-img-top rounded-circle w-75 mx-auto mt-4 img_aspect"
-                    />
-                    <div class="card-body text-center">
-                        <h3 class="FontTitle mb-3">Alex</h3>
-                        <p class="FontBody small mb-0 px-3">
-                            Desarrollador Full Stack - Encargado de la
-                            plataforma web y experiencia digital. Especialista
-                            en e-commerce.
-                        </p>
+            <!-- Tarjeta miembro -->
+            {#each [{ src: AxelProfile, name: "Alex", role: "Desarrollador Full Stack - Encargado de la plataforma web y experiencia digital. Especialista en e-commerce." }, { src: DanielProfile, name: "Daniel", role: "Diseñador Principal - Creador de nuestras colecciones y supervisor de producción. Experto en tejidos técnicos." }, { src: "/src/lib/assets/images/user.png", name: "Angela", role: "Directora Financiera - Gestión de pedidos y logística. Especialista en comercio internacional y aduanas." }] as member, i}
+                <div
+                    class="col"
+                    in:fly={{ y: 50, duration: 600, delay: 200 * i }}
+                >
+                    <div class="card h-100 border-0 bg-light hover-card">
+                        <img
+                            src={member.src}
+                            alt={member.name}
+                            class="card-img-top rounded-circle w-75 mx-auto mt-4 img_aspect"
+                            in:scale={{ duration: 500, delay: 200 * i }}
+                        />
+                        <div
+                            class="card-body text-center"
+                            in:fade={{ duration: 500, delay: 300 * i }}
+                        >
+                            <h3 class="FontTitle mb-3">{member.name}</h3>
+                            <p class="FontBody small mb-0 px-3">
+                                {member.role}
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Diseñador/Confección -->
-            <div class="col">
-                <div class="card h-100 border-0 bg-light hover-card">
-                    <img
-                        src={DanielProfile}
-                        alt="Diseñadora de Moda"
-                        class="card-img-top rounded-circle w-75 mx-auto mt-4 img_aspect"
-                    />
-                    <div class="card-body text-center">
-                        <h3 class="FontTitle mb-3">Daniel</h3>
-                        <p class="FontBody small mb-0 px-3">
-                            Diseñador Principal - Creador de nuestras
-                            colecciones y supervisor de producción. Experto en
-                            tejidos técnicos.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contabilidad -->
-            <div class="col">
-                <div class="card h-100 border-0 bg-light hover-card">
-                    <img
-                        src="/src/lib/assets/images/user.png"
-                        alt="Directora Financiera"
-                        class="card-img-top rounded-circle w-75 mx-auto mt-4 img_aspect"
-                    />
-                    <div class="card-body text-center">
-                        <h3 class="FontTitle mb-3">Angela</h3>
-                        <p class="FontBody small mb-0 px-3">
-                            Directora Financiera - Gestión de pedidos y
-                            logística. Especialista en comercio internacional y
-                            aduanas.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            {/each}
         </div>
 
         <!-- Formulario -->
@@ -91,36 +70,41 @@
             method="post"
             on:submit|preventDefault={onSubmitHandler}
             class="contact-form mx-auto"
+            in:fly={{ y: 50, duration: 600, delay: 800 }}
         >
             <div class="row g-3 mb-4">
                 <div class="col-md-6">
                     <input
                         type="text"
                         placeholder="Asunto"
-                        class="FontBody form-control py-2 border-dark"
+                        class="FontBody form-control py-2 border-dark input-animated"
                         required
+                        in:fade={{ duration: 400, delay: 900 }}
                     />
                 </div>
                 <div class="col-md-6">
                     <input
                         type="email"
                         placeholder="Tu correo electrónico"
-                        class="FontBody form-control py-2 border-dark"
+                        class="FontBody form-control py-2 border-dark input-animated"
                         required
+                        in:fade={{ duration: 400, delay: 1000 }}
                     />
                 </div>
                 <div class="col-12">
                     <textarea
-                        class="FontBody form-control py-2 border-dark"
+                        class="FontBody form-control py-2 border-dark input-animated"
                         rows="5"
                         placeholder="Describe tu consulta..."
                         required
+                        in:fade={{ duration: 400, delay: 1100 }}
                     ></textarea>
                 </div>
             </div>
             <button
                 type="submit"
-                class="FontTitle btn btn-dark rounded-pill px-4 py-2 d-flex align-items-center mx-auto"
+                class="FontTitle btn btn-dark rounded-pill px-4 py-2 d-flex align-items-center mx-auto send-btn"
+                in:scale={{ duration: 500, delay: 1200 }}
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -146,7 +130,6 @@
             transform 0.3s ease,
             box-shadow 0.3s ease;
     }
-
     .hover-card:hover {
         transform: translateY(-10px);
         box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
@@ -155,12 +138,52 @@
     .contact-form {
         max-width: 800px;
     }
-
     .border-dark {
         border: 2px solid #333 !important;
     }
-
     .img_aspect {
         aspect-ratio: 1/1;
+    }
+
+    /* Animación de botón enviar */
+    .send-btn {
+        transition:
+            transform 0.2s,
+            box-shadow 0.2s;
+    }
+    .send-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Inputs animated focus */
+    .input-animated {
+        transition:
+            border-color 0.3s,
+            box-shadow 0.3s;
+    }
+    .input-animated:focus {
+        border-color: #00ccff !important;
+        box-shadow: 0 0 5px rgba(0, 204, 255, 0.5);
+        outline: none;
+    }
+
+    /* Email link pulse */
+    .email-link {
+        display: inline-block;
+        position: relative;
+        color: #333;
+        text-decoration: none;
+        font-size: 1.1rem;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%,
+        100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
     }
 </style>
