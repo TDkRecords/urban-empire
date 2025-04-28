@@ -1,11 +1,11 @@
 @font-face {
     font-family: FontBody;
-    src: url("./fonts/Quicksand/Quicksand-VariableFont_wght.ttf");
+    src: url("./fonts/Urbanist/static/Urbanist-Medium.ttf");
 }
 
 @font-face {
     font-family: FontTitle;
-    src: url("./fonts/Quicksand/static/Quicksand-Bold.ttf");
+    src: url("./fonts/UnifrakturCook/UnifrakturCook-Bold.ttf");
 
 }
 
@@ -25,3 +25,45 @@
 .NavFont {
     font-family: NavFont;
 }
+
+/* Paleta Morada Business */
+.purple-900 {
+    background-color: #2E0854;
+}
+
+/* Morado muy oscuro, para fondos principales */
+.purple-700 {
+    background-color: #5A2E8A;
+}
+
+/* Morado profundo, para secciones destacadas */
+.purple-500 {
+    background-color: #8F52C1;
+}
+
+/* Morado medio, para botones y acentos */
+.lavender-300 {
+    background-color: #CBA3E0;
+}
+
+/* Lavanda suave, para fondos secundarios o “cards” */
+.slate-gray {
+    background-color: #F4F2F8;
+}
+
+/* Gris clarito, para fondos neutros y contrastes */
+.accent-gold {
+    background-color: #F8C555;
+}
+
+/* Dorado suave, como color de llamada a la acción */
+.text-dark {
+    color: #1F1A2E;
+}
+
+/* Texto oscuro para máxima legibilidad */
+.text-light {
+    color: #FFFFFF;
+}
+
+/* Texto claro sobre fondos oscuros */

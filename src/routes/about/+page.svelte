@@ -1,17 +1,18 @@
 <script>
-    import Logo from "$lib/assets/images/logo.jpg";
+    import Logo from "$lib/assets/images/favicon.jpeg";
     import { fade, fly } from "svelte/transition";
 </script>
 
-<main>
-    <div class="container my-5">
+<main class="bg-personalizado">
+    <div class="container py-5">
+        <!-- Encabezado mejorado -->
         <div
-            class="row bg-white rounded-3 p-4 mb-4 container m-auto"
+            class="row bg-black rounded-3 p-4 mb-4 container m-auto d-flex justify-content-center align-items-center"
             in:fade={{ duration: 500 }}
         >
             <div
                 class="col-md-4 d-flex justify-content-center align-items-center"
-                in:fly={{ x: -200, duration: 600 }}
+                in:fly={{ x: -200, duration: 300 }}
             >
                 <img
                     src={Logo}
@@ -20,45 +21,32 @@
                 />
             </div>
             <div class="col-md-8" in:fly={{ x: 200, duration: 600 }}>
-                <h1 class="FontTitle intro-title">Sobre Urban Empire</h1>
-                <p class="FontBody intro-text">
-                    En Urban Empire, nuestra pasión es fusionar la cultura
-                    urbana con diseños de vanguardia. Fundada en 2020 en Madrid,
-                    somos un colectivo de creativos, diseñadores y artesanos que
-                    buscan redefinir el streetwear contemporáneo.
+                <h1 class="FontTitle text-light">Sobre Nosotros</h1>
+                <p class="FontBody text-light">
+                    Urban Empire es una tienda de streetwear ubicada en Pasto,
+                    Nariño, Colombia. Desde 2025, ofrecemos prendas únicas que
+                    fusionan la riqueza cultural local con tendencias
+                    internacionales.
+                </p>
+                <p class="FontBody text-light">
+                    Nuestras colecciones destacan por su calidad y diseño,
+                    utilizando materiales sostenibles y colaborando con
+                    artesanos de la región para impulsar la moda local.
                 </p>
             </div>
         </div>
 
+        <!-- Misión y Visión -->
         <div class="row mb-5 missions" in:fade={{ duration: 500 }}>
             <div
                 class="col-md-6 mb-4 mission-item"
                 in:fly={{ y: 100, duration: 600 }}
             >
-                <div class="bg-white rounded-3 p-4 h-100 card-anim">
-                    <h2 class="FontTitle">Nuestra Misión</h2>
-                    <p class="FontBody">
-                        En Urban Empire nos esforzamos por ser mucho más que una
-                        marca de ropa: queremos convertirnos en un referente
-                        cultural que empodere a cada individuo a través de
-                        prendas únicas. Nuestra misión es diseñar y producir
-                        ropa sostenible, funcional y con un estilo
-                        inconfundible, integrando tecnología textil de última
-                        generación con prácticas ecológicas. Buscamos inspirar
-                        confianza y originalidad, proporcionando herramientas de
-                        autoexpresión para aquellos que viven y respiran la
-                        energía de la ciudad.
-                    </p>
-                    <p class="FontBody">
-                        Empleamos materiales reciclados y procesos de bajo
-                        impacto ambiental, colaboramos con artesanos locales y
-                        fomentamos un modelo de economía circular. Además,
-                        promovemos iniciativas sociales que apoyan comunidades
-                        urbanas vulnerables, destinando parte de nuestros
-                        ingresos a proyectos educativos y culturales. Cada
-                        prenda de Urban Empire tiene un propósito: redefinir el
-                        concepto de moda urbana y dejar una huella positiva en
-                        el planeta.
+                <div class="slate-gray rounded-3 p-4 h-100 card-anim">
+                    <h2 class="FontTitle text-dark">Misión</h2>
+                    <p class="FontBody text-dark">
+                        Proveer ropa urbana de alta calidad, con diseño
+                        atractivo y producción responsable.
                     </p>
                 </div>
             </div>
@@ -66,81 +54,67 @@
                 class="col-md-6 mb-4 mission-item"
                 in:fly={{ y: 100, duration: 600, delay: 200 }}
             >
-                <div class="bg-white rounded-3 p-4 h-100 card-anim">
-                    <h2 class="FontTitle">Nuestra Visión</h2>
-                    <p class="FontBody">
-                        Visualizamos un futuro donde el streetwear sea sinónimo
-                        de innovación, sostenibilidad y autenticidad. Aspiramos
-                        a transformar la industria textil, demostrando que la
-                        moda urbana puede ser ética, duradera y tecnológicamente
-                        avanzada. Urban Empire se ve a sí misma liderando el
-                        cambio global, inspirando a otras marcas a adoptar
-                        prácticas responsables y creativas.
-                    </p>
-                    <p class="FontBody">
-                        Nos imaginamos una comunidad mundial conectada por la
-                        pasión por la cultura de la calle, donde nuestros
-                        diseños crucen fronteras y sirvan como lienzos de
-                        historias personales. Queremos que cada prenda actúe
-                        como un catalizador de conexiones reales, revoluciones
-                        creativas y movimientos sociales, construyendo así un
-                        legado que trascienda generaciones.
+                <div class="slate-gray rounded-3 p-4 h-100 card-anim">
+                    <h2 class="FontTitle text-dark">Visión</h2>
+                    <p class="FontBody text-dark">
+                        Consolidarnos como la marca de streetwear sostenible
+                        preferida en Colombia y expandirnos a mercados clave en
+                        América Latina.
                     </p>
                 </div>
             </div>
         </div>
 
+        <!-- Objetivos -->
         <div class="row mb-5" in:fade={{ duration: 500 }}>
             <div class="col-12 text-center mb-4">
-                <h2 class="FontTitle text-light">Nuestros Valores</h2>
+                <h2 class="FontTitle text-light">Objetivos</h2>
             </div>
             <div
-                class="col-md-4 mb-3 value-item"
+                class="col-md-4 mb-3 objective-item"
                 in:fly={{ x: -100, duration: 500 }}
             >
-                <div class="value-card">
-                    <h5 class="FontTitle">Sostenibilidad</h5>
-                    <p class="FontBody">
-                        Uso de materiales ecológicos y procesos de producción
-                        responsables.
+                <div class="slate-gray rounded-3 p-4 h-100 card-anim">
+                    <h5 class="FontTitle text-dark">Colecciones</h5>
+                    <p class="FontBody text-dark">
+                        Lanzar 3 colecciones anuales con diseños exclusivos.
                     </p>
                 </div>
             </div>
             <div
-                class="col-md-4 mb-3 value-item"
+                class="col-md-4 mb-3 objective-item"
                 in:fly={{ y: 100, duration: 500, delay: 100 }}
             >
-                <div class="value-card">
-                    <h5 class="FontTitle">Creatividad</h5>
-                    <p class="FontBody">
-                        Diseños únicos que rompen moldes y expresan tu
-                        identidad.
+                <div class="slate-gray rounded-3 p-4 h-100 card-anim">
+                    <h5 class="FontTitle text-dark">Ventas</h5>
+                    <p class="FontBody text-dark">
+                        Incrementar las ventas online en un 25% cada año.
                     </p>
                 </div>
             </div>
             <div
-                class="col-md-4 mb-3 value-item"
+                class="col-md-4 mb-3 objective-item"
                 in:fly={{ x: 100, duration: 500, delay: 200 }}
             >
-                <div class="value-card">
-                    <h5 class="FontTitle">Comunidad</h5>
-                    <p class="FontBody">
-                        Fomentamos conexiones auténticas con nuestros clientes y
-                        colaboradores.
+                <div class="slate-gray rounded-3 p-4 h-100 card-anim">
+                    <h5 class="FontTitle text-dark">Colaboraciones</h5>
+                    <p class="FontBody text-dark">
+                        Establecer 5 alianzas con artistas y creadores locales.
                     </p>
                 </div>
             </div>
         </div>
 
+        <!-- Contacto -->
         <div
-            class="row bg-white rounded-3 p-4 contact-section container m-auto"
+            class="row purple-700 rounded-3 p-4 contact-section container m-auto"
             in:fade={{ duration: 500 }}
         >
             <div class="col-md-8" in:fly={{ x: -200, duration: 600 }}>
-                <h2 class="FontTitle">¿Tienes preguntas?</h2>
-                <p class="FontBody">
+                <h2 class="FontTitle text-light">¿Tienes preguntas?</h2>
+                <p class="FontBody text-light">
                     Visita nuestra
-                    <a href="/contacto" class="contact-link">
+                    <a href="/contacto" class="contact-link text-light">
                         página de contacto
                     </a>
                     para enviarnos tus dudas, sugerencias o colaboraciones.
@@ -151,6 +125,39 @@
 </main>
 
 <style>
+    .bg-personalizado {
+        background: url("/src/lib/assets/images/gengar.jpg");
+        background-size: 648px;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: repeat;
+    }
+    /* Paleta Morada Business */
+    .purple-900 {
+        background-color: #2e0854;
+    }
+    .purple-700 {
+        background-color: #5a2e8a;
+    }
+    .purple-500 {
+        background-color: #8f52c1;
+    }
+    .lavender-300 {
+        background-color: #cba3e0;
+    }
+    .slate-gray {
+        background-color: #f4f2f8;
+    }
+    .accent-gold {
+        background-color: #f8c555;
+    }
+    .text-dark {
+        color: #1f1a2e;
+    }
+    .text-light {
+        color: #ffffff;
+    }
+
     .intro-img {
         animation: rotateIn 1s ease-out;
     }
@@ -173,17 +180,7 @@
         transform: translateY(-10px);
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     }
-    .value-card {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        transition: transform 105ms;
-    }
-    .value-card:hover {
-        transform: scale(1.05);
-    }
     .contact-link {
-        color: #000;
         font-weight: bold;
         position: relative;
         text-decoration: none;
@@ -193,7 +190,7 @@
         position: absolute;
         width: 100%;
         height: 2px;
-        background: #000;
+        background: #ffffff;
         bottom: -4px;
         left: 0;
         transform: scaleX(0);

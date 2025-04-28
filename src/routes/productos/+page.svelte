@@ -9,7 +9,7 @@
         {
             id: 1,
             title: "Hoodie Oversize Grafiti",
-            price: "$79.99",
+            price: "$205.999",
             image: Prod1,
             description:
                 "Sudadera oversize con estampado urbano y tejidos técnicos resistentes.",
@@ -17,7 +17,7 @@
         {
             id: 2,
             title: "Jeans Roto Laser",
-            price: "$89.99",
+            price: "$230.999",
             image: Prod2,
             description:
                 "Pantalón denim con roturas láser de precisión y ajuste slim.",
@@ -25,7 +25,7 @@
         {
             id: 3,
             title: "Bomber Techwear",
-            price: "$129.99",
+            price: "$334.999",
             image: Prod3,
             description:
                 "Chaqueta bomber multifuncional con bolsillos estratégicos y paneles repelentes.",
@@ -39,71 +39,98 @@
     }
 </script>
 
-<main class="container my-5" in:fade={{ duration: 500 }}>
-    <div class="text-center text-light mb-5" in:fly={{ y: -20, duration: 600 }}>
-        <h1 class="FontTitle section-title">Nuestros Productos</h1>
-        <p class="FontBody lead" in:fade={{ delay: 200, duration: 600 }}>
-            Descubre nuestra colección premium de streetwear y techwear
-            diseñados para destacar.
-        </p>
-    </div>
+<main class="bg-personalizado w-100 h-100">
+    <div class="container py-5" in:fade={{ duration: 500 }}>
+        <div
+            class="text-center text-light mb-5 p-4 bg-transparent-blur"
+            in:fly={{ y: -20, duration: 600 }}
+        >
+            <h1 class="FontTitle section-title">Nuestros Productos</h1>
+            <p class="FontBody lead" in:fade={{ delay: 200, duration: 600 }}>
+                Descubre nuestra colección premium de streetwear y techwear
+                diseñados para destacar.
+            </p>
+        </div>
 
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        {#each products as product, i}
-            <div class="col" in:fly={{ y: 50, duration: 600, delay: i * 200 }}>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {#each products as product, i}
                 <div
-                    class="card h-100 border-0 product-card"
-                    in:scale={{ duration: 400, delay: 300 + i * 200 }}
+                    class="col"
+                    in:fly={{ y: 50, duration: 600, delay: i * 200 }}
                 >
-                    <img
-                        src={product.image}
-                        class="card-img-top img-fluid"
-                        alt={product.title}
-                    />
-                    <div class="card-body text-center">
-                        <h5 class="card-title FontTitle">{product.title}</h5>
-                        <p class="card-text FontBody small">
-                            {product.description}
-                        </p>
-                    </div>
-                    <div class="card-footer bg-white border-0 text-center mb-2">
-                        <span class="FontTitle price">{product.price}</span>
-                        <button
-                            on:click={() => openModal(product)}
-                            class="btn btn-info btn-sm ms-3 view-btn"
+                    <div
+                        class="card h-100 border-0 product-card"
+                        in:scale={{ duration: 400, delay: 300 + i * 200 }}
+                    >
+                        <img
+                            src={product.image}
+                            class="card-img-top img-fluid"
+                            alt={product.title}
+                        />
+                        <div class="card-body text-center">
+                            <h5 class="card-title FontTitle">
+                                {product.title}
+                            </h5>
+                            <p class="card-text FontBody small">
+                                {product.description}
+                            </p>
+                        </div>
+                        <div
+                            class="card-footer bg-white border-0 text-center mb-2"
                         >
-                            Ver más
-                        </button>
+                            <span class="FontTitle price">{product.price}</span>
+                            <button
+                                on:click={() => openModal(product)}
+                                class="btn btn-info btn-sm ms-3 view-btn"
+                            >
+                                Ver más
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        {/each}
-    </div>
-
-    {#if selectedProduct}
-        <div class="modal-overlay" on:click={closeModal} in:fade out:fade>
-            <div
-                class="modal-content"
-                on:click|stopPropagation
-                in:fly={{ y: 200, duration: 400 }}
-            >
-                <button class="modal-close" on:click={closeModal}
-                    >&times;</button
-                >
-                <img
-                    src={selectedProduct.image}
-                    alt={selectedProduct.title}
-                    class="img-fluid mb-3"
-                />
-                <h2 class="FontTitle mb-2">{selectedProduct.title}</h2>
-                <p class="FontBody mb-2">{selectedProduct.description}</p>
-                <p class="FontTitle price">Precio: {selectedProduct.price}</p>
-            </div>
+            {/each}
         </div>
-    {/if}
+
+        {#if selectedProduct}
+            <div class="modal-overlay" on:click={closeModal} in:fade out:fade>
+                <div
+                    class="modal-content"
+                    on:click|stopPropagation
+                    in:fly={{ y: 200, duration: 400 }}
+                >
+                    <button class="modal-close" on:click={closeModal}>
+                        &times;
+                    </button>
+                    <img
+                        src={selectedProduct.image}
+                        alt={selectedProduct.title}
+                        class="img-fluid mb-3"
+                    />
+                    <h2 class="FontTitle mb-2">{selectedProduct.title}</h2>
+                    <p class="FontBody mb-2">{selectedProduct.description}</p>
+                    <p class="FontTitle price">
+                        Precio: {selectedProduct.price}
+                    </p>
+                </div>
+            </div>
+        {/if}
+    </div>
 </main>
 
 <style>
+    .bg-personalizado {
+        background: url("/src/lib/assets/images/gengar-2.jpg");
+        background-size: 218px;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: repeat;
+    }
+
+    .bg-transparent-blur {
+        backdrop-filter: blur(21px);
+        border: 1px solid white;
+        border-radius: 16px;
+    }
     .product-card {
         transition:
             transform 0.3s,

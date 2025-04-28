@@ -30,27 +30,32 @@
 </script>
 
 <footer
-    class="footer bg-dark text-white py-5 mt-5"
+    class="footer purple-900 text-light py-5 border-0"
     in:fly={{ y: 50, duration: 500 }}
 >
     <div class="container">
         <div class="row justify-content-between">
             <!-- Newsletter -->
             <div class="col-md-4 mb-4" in:fade={{ delay: 200, duration: 600 }}>
-                <h5 class="FontTitle mb-3">Suscríbete a nuestro boletín</h5>
+                <h5 class="FontTitle mb-3 text-light">
+                    Suscríbete a nuestro boletín
+                </h5>
                 <form
                     on:submit|preventDefault={submitNewsletter}
                     class="d-flex newsletter-form"
+                    action="https://formsubmit.co/urbanempire.colombia@gmail.com"
+                    method="POST"
                 >
                     <input
                         type="email"
+                        name="email"
                         bind:value={email}
-                        class="form-control me-2 newsletter-input"
+                        class="form-control me-2 newsletter-input lavender-300 text-light"
                         placeholder="Introduce tu correo"
                         required
                     />
                     <button
-                        class="btn btn-info btn-newsletter FontBody"
+                        class="btn purple-500 text-light FontBody"
                         type="submit"
                     >
                         Suscribirse
@@ -63,13 +68,13 @@
                 class="col-md-3 mb-4 text-center"
                 in:fade={{ delay: 400, duration: 600 }}
             >
-                <h5 class="FontTitle mb-3">Síguenos</h5>
+                <h5 class="FontTitle mb-3 text-light">Síguenos</h5>
                 <div class="d-flex justify-content-center social-icons">
                     {#each socialLinks as link, i}
                         <a
                             href={link.url}
                             alt={link.name}
-                            class="text-white mx-2 social-link"
+                            class="text-light mx-2 social-link"
                             target="_blank"
                             rel="noopener"
                             in:scale={{ duration: 300, delay: 100 * i }}
@@ -86,14 +91,12 @@
                 class="col-md-4 text-center text-md-end"
                 in:fade={{ delay: 600, duration: 600 }}
             >
-                <h5 class="FontTitle mb-3">Urban Empire</h5>
+                <h5 class="FontTitle mb-3 text-light">Urban Empire</h5>
                 <p class="FontBody mb-2">
-                    Creando ciudades que prosperan en el siglo XXI. Únete a
-                    nuestra misión de construir un futuro urbano más brillante.
+                    Creando modas que prosperan en el siglo XXI.
                 </p>
                 <p class="FontBody small mb-0">
-                    &copy; {new Date().getFullYear()} Urban Empire. Todos los derechos
-                    reservados.
+                    &copy; {new Date().getFullYear()} Todos los derechos reservados.
                 </p>
             </div>
         </div>
@@ -101,34 +104,24 @@
 </footer>
 
 <style>
-    .newsletter-form {
-        transition: box-shadow 0.3s;
+    .btn {
+        transition: all 0.3s;
+        border: 2px solid #8f52c1; /* purple-500 */
     }
-    .newsletter-input {
-        border: 2px solid #00ccff;
-        transition: box-shadow 0.3s;
-    }
-    .newsletter-input:focus {
-        box-shadow: 0 0 8px rgba(0, 204, 255, 0.6);
-        outline: none;
-    }
-    .btn-newsletter {
-        transition: transform 0.2s;
-    }
-    .btn-newsletter:hover {
-        transform: scale(1.05);
+    .btn:hover {
+        background-color: #f8c555; /* accent-gold */
+        border-color: #f8c555;
+        color: #2e0854 !important; /* purple-900 */
     }
     .social-link {
         font-size: 1.25rem;
-        transition:
-            color 0.3s,
-            transform 0.3s;
+        transition: color 0.3s;
+        text-decoration: none !important;
     }
     .social-link:hover {
-        color: #00ccff;
-        transform: translateY(-3px);
+        color: #f8c555 !important; /* accent-gold */
     }
     footer {
-        border-top: 2px solid #00ccff;
+        border-top: 2px solid #8f52c1; /* purple-500 */
     }
 </style>

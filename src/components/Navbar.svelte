@@ -2,11 +2,11 @@
     import "../app.css";
 </script>
 
-<nav class="navbar navbar-expand-lg bg-dark sticky-top">
+<nav class="navbar navbar-expand-lg purple-700 sticky-top">
     <div class="container-fluid">
-        <a class="navbar-brand text-info" href="/">URBAN EMPIRE</a>
+        <a class="navbar-brand text-light fw-bold" href="/"> URBAN EMPIRE </a>
         <button
-            class="navbar-toggler bg-info"
+            class="navbar-toggler border-0"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#navbarNav"
@@ -17,24 +17,24 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
+            <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link" aria-current="page" href="/">
-                        Home <i class="fa-solid fa-house"></i>
+                    <a class="nav-link text-light" aria-current="page" href="/">
+                        Inicio <i class="fa-solid fa-house"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/productos">
+                    <a class="nav-link text-light" href="/productos">
                         Productos <i class="fa-solid fa-bag-shopping"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/about">
+                    <a class="nav-link text-light" href="/about">
                         Acerca de <i class="fa-solid fa-circle-info"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/contacto">
+                    <a class="nav-link text-light" href="/contacto">
                         Contacto <i class="fa-solid fa-user-tie"></i>
                     </a>
                 </li>
@@ -44,54 +44,42 @@
 </nav>
 
 <style>
-    .navbar .nav-link {
+    .navbar {
+        padding: 1rem 2rem;
+        box-shadow: 0 2px 15px rgba(46, 8, 84, 0.08);
+    }
+
+    .navbar-brand {
+        font-size: clamp(1.4rem, 1vw, 3rem);
+        letter-spacing: -0.5px;
+    }
+
+    .nav-link {
         position: relative;
-        color: #00ccff;
-        text-decoration: none;
-        transition: color 125ms ease-out;
+        margin: 0 1rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
     }
 
-    .navbar .nav-link::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: #00ccff;
-        transform: scaleX(0);
-        transform-origin: left;
-        transition: transform 300ms ease-out;
+    .nav-link i {
+        color: #ffffff;
+        margin-left: 0.3rem;
+        transition: inherit;
     }
 
-    .navbar .nav-link:hover {
-        color: whitesmoke;
+    .nav-link:hover {
+        color: #f8c555 !important;
     }
 
-    .navbar .nav-link:hover::after {
-        transform: scaleX(1);
+    .nav-link:hover i {
+        color: #f8c555;
     }
 
-    .navbar .navbar-brand {
-        position: relative;
-        transition: color 125ms ease-out;
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%231F1A2E' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
     }
-    .navbar .navbar-brand::after {
-        content: "";
-        position: absolute;
-        bottom: -4px;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: #00ccff;
-        transform: scaleX(0);
-        transform-origin: left;
-        transition: transform 300ms ease-out;
-    }
-    .navbar .navbar-brand:hover {
-        color: whitesmoke;
-    }
-    .navbar .navbar-brand:hover::after {
-        transform: scaleX(1);
+
+    .navbar-toggler:focus {
+        box-shadow: 0 0 0 2px rgba(248, 197, 85, 0.5);
     }
 </style>
