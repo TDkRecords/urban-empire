@@ -60,6 +60,12 @@
                     >
                         Suscribirse
                     </button>
+
+                    <input
+                        type="hidden"
+                        name="_next"
+                        value="https://urbanempire.vercel.app/"
+                    />
                 </form>
             </div>
 

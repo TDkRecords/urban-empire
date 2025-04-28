@@ -130,6 +130,11 @@
                     </svg>
                     Enviar Mensaje
                 </button>
+                <input
+                    type="hidden"
+                    name="_next"
+                    value="https://urbanempire.vercel.app/"
+                />
             </form>
         </div>
     </div>
