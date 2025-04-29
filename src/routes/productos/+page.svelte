@@ -3,6 +3,14 @@
     import Prod1 from "$lib/assets/images/prod-1.jpg";
     import Prod2 from "$lib/assets/images/prod-2.jpg";
     import Prod3 from "$lib/assets/images/prod-3.jpg";
+    import Prod4 from "$lib/assets/images/prod-4.jpg";
+    import Prod5 from "$lib/assets/images/prod-5.jpg";
+    import Prod6 from "$lib/assets/images/prod-6.jpg";
+    import Prod7 from "$lib/assets/images/gengar-5.jpg";
+    import Prod8 from "$lib/assets/images/prod-8.jpg";
+    import Prod9 from "$lib/assets/images/prod-9.jpg";
+    import Prod10 from "$lib/assets/images/prod-10.jpg";
+
     import { fade, fly, scale } from "svelte/transition";
     let selectedProduct = null;
     const products = [
@@ -29,6 +37,61 @@
             image: Prod3,
             description:
                 "Chaqueta bomber multifuncional con bolsillos estratégicos y paneles repelentes.",
+        },
+        {
+            id: 4,
+            title: "Custom Desing",
+            image: Prod4,
+            price: "$75.999",
+            description:
+                "Diseños personalizados promoviendo la libertad de expresion dentro del streetwear",
+        },
+        {
+            id: 5,
+            title: "Conjuntos style type",
+            image: Prod5,
+            price: "$189.999",
+            description:
+                "Conjuntos de artistas que promueven la marca Urban Empire con su estilo promoviendo nuestra esencia",
+        },
+        {
+            id: 6,
+            title: "Fusion Cultural",
+            image: Prod6,
+            price: "$59.999",
+            description:
+                "Prendas que fusionan la cultura otaku con la cultura urbana sin dejar de lado la elegancia",
+        },
+        {
+            id: 7,
+            title: "Indie Street",
+            image: Prod7,
+            price: "$64.999",
+            description: "Introducción al estilo indie al estilo urbano",
+        },
+        {
+            id: 8,
+            title: "8th School",
+            image: Prod8,
+            price: "$72.999",
+            description:
+                "Diseños de 8-bits especializados para gamers old-school que buscan moda, comodidad y nostalgia al mismo tiempo.",
+        },
+        {
+            id: 9,
+            title: "Dual Style",
+            image: Prod9,
+            price: "$146.999",
+            description:
+                "El arte de compartir entre generos a través de la moda, Dual Style promueve la comunicación visual aportando riquesa a las relaciones interpersonales",
+        },
+        {
+            id: 10,
+            title: "Black & White",
+            image: Prod10,
+            price: "$211.999",
+            description:
+                "El contraste entre channel y Urban Empire a través del diseño black 6 white, dando esencia única a cada prenda que producimos",
         },
     ];
     function openModal(product) {
