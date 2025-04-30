@@ -110,8 +110,8 @@
         >
             <h1 class="FontTitle section-title">Nuestros Productos</h1>
             <p class="FontBody lead" in:fade={{ delay: 200, duration: 600 }}>
-                Descubre nuestra colección premium de streetwear y techwear
-                diseñados para destacar.
+                Descubre nuestra colección de streetwear y techwear diseñados
+                para destacar.
             </p>
         </div>
 
