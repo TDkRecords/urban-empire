@@ -43,14 +43,16 @@
             </div>
 
             <!-- Equipo -->
-            <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+            <div class="container">
                 <!-- Tarjeta miembro -->
-                {#each [{ src: DanielProfile, name: "Daniel Castro", role: "Diseñador Principal - Creador de nuestras colecciones y supervisor de producción. Experto en tejidos técnicos." }, { src: AngelaProfile, name: "Angela Palmas", role: "Directora Financiera - Gestión de pedidos y logística. Especialista en comercio internacional y aduanas." }, { src: AxelProfile, name: "Axel Josh", role: "Desarrollador Full Stack - Encargado de la plataforma web y experiencia digital. Especialista en e-commerce." }] as member, i}
+                {#each [{ src: DanielProfile, name: "Daniel Castro", role: "Diseñador Principal - Creador de nuestras colecciones y supervisor de producción. Experto en tejidos técnicos." }] as member, i}
                     <div
                         class="col"
                         in:fly={{ y: 50, duration: 600, delay: 200 * i }}
                     >
-                        <div class="card h-100 border-0 bg-light hover-card">
+                        <div
+                            class="card h-100 border-0 bg-light hover-card w-50 m-auto"
+                        >
                             <img
                                 src={member.src}
                                 alt={member.name}
