@@ -1,104 +1,86 @@
 <script>
-    import "../../app.css";
-    import Prod1 from "$lib/assets/images/prod-1.jpg";
-    import Prod2 from "$lib/assets/images/prod-2.jpg";
-    import Prod3 from "$lib/assets/images/prod-3.jpg";
-    import Prod4 from "$lib/assets/images/prod-4.jpg";
-    import Prod5 from "$lib/assets/images/prod-5.jpg";
-    import Prod6 from "$lib/assets/images/prod-6.jpg";
-    import Prod7 from "$lib/assets/images/gengar-5.jpg";
-    import Prod8 from "$lib/assets/images/prod-8.jpg";
-    import Prod9 from "$lib/assets/images/prod-9.jpg";
-    import Prod10 from "$lib/assets/images/prod-10.jpg";
-
+    import { onMount } from "svelte";
     import { fade, fly, scale } from "svelte/transition";
+    import { cart } from "$lib/stores/cart";
+    import { getProducts } from "$lib/services/productService";
+
+    let products = [];
     let selectedProduct = null;
-    const products = [
-        {
-            id: 1,
-            title: "Hoodie Oversize Grafiti",
-            price: "$205.999",
-            image: Prod1,
-            description:
-                "Sudadera oversize con estampado urbano y tejidos técnicos resistentes.",
-        },
-        {
-            id: 2,
-            title: "Jeans Roto Laser",
-            price: "$230.999",
-            image: Prod2,
-            description:
-                "Pantalón denim con roturas láser de precisión y ajuste slim.",
-        },
-        {
-            id: 3,
-            title: "Bomber Techwear",
-            price: "$334.999",
-            image: Prod3,
-            description:
-                "Chaqueta bomber multifuncional con bolsillos estratégicos y paneles repelentes.",
-        },
-        {
-            id: 4,
-            title: "Custom Desing",
-            image: Prod4,
-            price: "$75.999",
-            description:
-                "Diseños personalizados promoviendo la libertad de expresion dentro del streetwear",
-        },
-        {
-            id: 5,
-            title: "Conjuntos style type",
-            image: Prod5,
-            price: "$189.999",
-            description:
-                "Conjuntos de artistas que promueven la marca Urban Empire con su estilo promoviendo nuestra esencia",
-        },
-        {
-            id: 6,
-            title: "Fusion Cultural",
-            image: Prod6,
-            price: "$59.999",
-            description:
-                "Prendas que fusionan la cultura otaku con la cultura urbana sin dejar de lado la elegancia",
-        },
-        {
-            id: 7,
-            title: "Indie Street",
-            image: Prod7,
-            price: "$64.999",
-            description: "Introducción al estilo indie al estilo urbano",
-        },
-        {
-            id: 8,
-            title: "8th School",
-            image: Prod8,
-            price: "$72.999",
-            description:
-                "Diseños de 8-bits especializados para gamers old-school que buscan moda, comodidad y nostalgia al mismo tiempo.",
-        },
-        {
-            id: 9,
-            title: "Dual Style",
-            image: Prod9,
-            price: "$146.999",
-            description:
-                "El arte de compartir entre generos a través de la moda, Dual Style promueve la comunicación visual aportando riquesa a las relaciones interpersonales",
-        },
-        {
-            id: 10,
-            title: "Black & White",
-            image: Prod10,
-            price: "$211.999",
-            description:
-                "El contraste entre channel y Urban Empire a través del diseño black 6 white, dando esencia única a cada prenda que producimos",
-        },
-    ];
+    let selectedSize = null;
+    let selectedColor = null;
+    let loading = true;
+    let error = null;
+    let addingToCart = false;
+
+    // Obtener productos de Firebase al cargar el componente
+    onMount(async () => {
+        try {
+            products = await getProducts();
+            loading = false;
+        } catch (err) {
+            console.error("Error al cargar productos:", err);
+            error =
+                "No se pudieron cargar los productos. Por favor, intente de nuevo más tarde.";
+            loading = false;
+        }
+    });
+
     function openModal(product) {
         selectedProduct = product;
     }
+
     function closeModal() {
         selectedProduct = null;
+    }
+
+    async function addToCart(product) {
+        if (addingToCart) return;
+        
+        addingToCart = true;
+        try {
+            await cart.addToCart({
+                ...product,
+                // Mapear los campos según la estructura del dashboard
+                title: product.nombre || product.title,
+                description: product.descripcion || product.description,
+                price: typeof product.precio === 'number' 
+                    ? `$${product.precio.toLocaleString('es-CO')}` 
+                    : (product.price || '$0'),
+                precio: product.precio,
+                imageUrl: product.imagen || product.imageUrl || product.image,
+                imagen: product.imagen,
+                stock: product.stock || 10,
+                // Mantener la categoría si existe
+                ...(product.categoria && { categoria: product.categoria }),
+                ...(selectedSize && { selectedSize }),
+                ...(selectedColor && { selectedColor })
+            });
+            
+            // Mostrar feedback visual
+            const button = event?.target;
+            if (button) {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Agregado';
+                button.classList.add('btn-success');
+                button.classList.remove('btn-primary');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-primary');
+                }, 2000);
+            }
+            
+            // Cerrar modal después de agregar
+            setTimeout(() => {
+                closeModal();
+            }, 1500);
+        } catch (error) {
+            console.error('Error al agregar al carrito:', error);
+            alert('Error al agregar el producto al carrito');
+        } finally {
+            addingToCart = false;
+        }
     }
 </script>
 
@@ -115,44 +97,100 @@
             </p>
         </div>
 
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {#each products as product, i}
-                <div
-                    class="col"
-                    in:fly={{ y: 50, duration: 600, delay: i * 200 }}
+        {#if loading}
+            <div class="text-center py-5">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="text-light mt-3">Cargando productos...</p>
+            </div>
+        {:else if error}
+            <div class="alert alert-danger">
+                {error}
+            </div>
+        {:else if products.length === 0}
+            <div class="text-center py-5">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="64"
+                    height="64"
+                    fill="currentColor"
+                    class="bi bi-box-seam text-light mb-3"
+                    viewBox="0 0 16 16"
                 >
+                    <path
+                        d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2zm3.564 1.426L5.596 5 8 5.961 14.154 3.5zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"
+                    />
+                </svg>
+                <h3 class="text-light">No hay productos disponibles</h3>
+                <p class="text-light">
+                    Pronto agregaremos nuevos productos a nuestra tienda.
+                </p>
+            </div>
+        {:else}
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                {#each products as product, i}
                     <div
-                        class="card h-100 border-0 product-card"
-                        in:scale={{ duration: 400, delay: 300 + i * 200 }}
+                        class="col"
+                        in:fly={{ y: 50, duration: 600, delay: i * 100 }}
                     >
-                        <img
-                            src={product.image}
-                            class="card-img-top img-fluid"
-                            alt={product.title}
-                        />
-                        <div class="card-body text-center">
-                            <h5 class="card-title FontTitle">
-                                {product.title}
-                            </h5>
-                            <p class="card-text FontBody small">
-                                {product.description}
-                            </p>
-                        </div>
                         <div
-                            class="card-footer bg-white border-0 text-center mb-2"
+                            class="card h-100 border-0 product-card"
+                            in:scale={{ duration: 400, delay: 300 + i * 100 }}
                         >
-                            <span class="FontTitle price">{product.price}</span>
-                            <button
-                                on:click={() => openModal(product)}
-                                class="btn btn-info btn-sm ms-3 view-btn"
+                            {#if product.imagen || product.imageUrl}
+                                <img
+                                    src={product.imagen || product.imageUrl}
+                                    class="card-img-top img-fluid"
+                                    alt={product.nombre || product.title || 'Producto'}
+                                    style="height: 300px; object-fit: cover;"
+                                    on:error={(e) => {
+                                        e.target.src = 'https://via.placeholder.com/300x300?text=Imagen+no+disponible';
+                                    }}
+                                />
+                            {:else}
+                                <div
+                                    class="bg-light d-flex align-items-center justify-content-center"
+                                    style="height: 300px;"
+                                >
+                                    <span class="text-muted">Sin imagen</span>
+                                </div>
+                            {/if}
+                            <div class="card-body text-center">
+                                <h5 class="card-title FontTitle">
+                                    {product.nombre || product.title}
+                                </h5>
+                                <p
+                                    class="card-text FontBody small text-truncate-3"
+                                    style="max-height: 4.5em; overflow: hidden;"
+                                >
+                                    {product.descripcion || product.description}
+                                </p>
+                            </div>
+                            <div
+                                class="card-footer bg-white border-0 text-center mb-2"
                             >
-                                Ver más
-                            </button>
+                                <span class="FontTitle price">
+                                    {typeof product.precio === "number"
+                                        ? `$${product.precio.toLocaleString("es-CO")}`
+                                        : (product.price || '$0')}
+                                </span>
+                                <div
+                                    class="mt-2 d-flex justify-content-center gap-2"
+                                >
+                                    <button
+                                        on:click={() => openModal(product)}
+                                        class="btn btn-info btn-sm view-btn"
+                                    >
+                                        Ver más
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            {/each}
-        </div>
+                {/each}
+            </div>
+        {/if}
 
         {#if selectedProduct}
             <div class="modal-overlay" on:click={closeModal} in:fade out:fade>
@@ -160,20 +198,132 @@
                     class="modal-content"
                     on:click|stopPropagation
                     in:fly={{ y: 200, duration: 400 }}
+                    style="max-width: 90%; max-height: 90vh; overflow-y: auto;"
                 >
                     <button class="modal-close" on:click={closeModal}>
                         &times;
                     </button>
-                    <img
-                        src={selectedProduct.image}
-                        alt={selectedProduct.title}
-                        class="img-fluid mb-3"
-                    />
-                    <h2 class="FontTitle mb-2">{selectedProduct.title}</h2>
-                    <p class="FontBody mb-2">{selectedProduct.description}</p>
-                    <p class="FontTitle price">
-                        Precio: {selectedProduct.price}
-                    </p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            {#if selectedProduct.imagen || selectedProduct.imageUrl}
+                                <img
+                                    src={selectedProduct.imagen || selectedProduct.imageUrl}
+                                    alt={selectedProduct.nombre || selectedProduct.title || 'Producto'}
+                                    class="img-fluid rounded mb-3"
+                                    style="max-height: 400px; width: 100%; object-fit: contain;"
+                                    on:error={(e) => {
+                                        e.target.src = 'https://via.placeholder.com/500x500?text=Imagen+no+disponible';
+                                    }}
+                                />
+                            {:else}
+                                <div
+                                    class="bg-light d-flex align-items-center justify-content-center"
+                                    style="height: 300px;"
+                                >
+                                    <span class="text-muted">Sin imagen</span>
+                                </div>
+                            {/if}
+                        </div>
+                        <div class="col-md-6">
+                            <h2 class="FontTitle mb-3">
+                                {selectedProduct.nombre || selectedProduct.title}
+                            </h2>
+                            {#if selectedProduct.categoria}
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary">{selectedProduct.categoria}</span>
+                                </div>
+                            {/if}
+                            <p class="FontBody mb-3">
+                                {selectedProduct.descripcion || selectedProduct.description}
+                            </p>
+
+                            <div class="mb-4">
+                                <h4 class="FontTitle price mb-3">
+                                    Precio: {typeof selectedProduct.precio === "number"
+                                        ? `$${selectedProduct.precio.toLocaleString("es-CO")}`
+                                        : (selectedProduct.price || '$0')}
+                                </h4>
+
+                                {#if selectedProduct.stock > 0}
+                                    <p class="text-success">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        En stock ({selectedProduct.stock} disponibles)
+                                    </p>
+                                {:else}
+                                    <p class="text-danger">
+                                        <i class="bi bi-x-circle-fill"></i> Sin stock
+                                    </p>
+                                {/if}
+
+                                {#if selectedProduct.sizes && selectedProduct.sizes.length > 0}
+                                    <div class="mb-3">
+                                        <label class="form-label"
+                                            >Tallas disponibles:</label
+                                        >
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {#each selectedProduct.sizes as size}
+                                                <button
+                                                    class="btn btn-outline-dark btn-sm"
+                                                    class:active={selectedSize ===
+                                                        size}
+                                                    on:click={() =>
+                                                        (selectedSize = size)}
+                                                >
+                                                    {size}
+                                                </button>
+                                            {/each}
+                                        </div>
+                                    </div>
+                                {/if}
+
+                                {#if selectedProduct.colors && selectedProduct.colors.length > 0}
+                                    <div class="mb-3">
+                                        <label class="form-label"
+                                            >Colores:</label
+                                        >
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {#each selectedProduct.colors as color}
+                                                <button
+                                                    class="btn btn-sm rounded-circle"
+                                                    style={`width: 30px; height: 30px; background-color: ${color};`}
+                                                    class:border-2={selectedColor ===
+                                                        color}
+                                                    class:border-primary={selectedColor ===
+                                                        color}
+                                                    on:click={() =>
+                                                        (selectedColor = color)}
+                                                    title={color}
+                                                ></button>
+                                            {/each}
+                                        </div>
+                                    </div>
+                                {/if}
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button
+                                    class="btn btn-primary flex-grow-1"
+                                    on:click={() => addToCart(selectedProduct)}
+                                    disabled={selectedProduct.stock <= 0 || addingToCart}
+                                >
+                                    {#if addingToCart}
+                                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        Agregando...
+                                    {:else}
+                                        <i class="bi bi-cart-plus me-2"></i>
+                                        Añadir al carrito
+                                    {/if}
+                                </button>
+                                <button
+                                    class="btn btn-outline-secondary"
+                                    on:click={closeModal}
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         {/if}
@@ -187,6 +337,7 @@
         background-position: center;
         background-attachment: fixed;
         background-repeat: repeat;
+        min-height: calc(100vh - 56px); /* Ajustar según el tamaño del navbar */
     }
 
     .bg-transparent-blur {
@@ -194,39 +345,93 @@
         border: 1px solid white;
         border-radius: 16px;
     }
+
     .product-card {
         transition:
             transform 0.3s,
             box-shadow 0.3s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: rgba(255, 255, 255, 0.9);
         border-radius: 12px;
         overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
+
     .product-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     }
-    .product-card img {
-        object-fit: cover;
-        height: 220px;
-        width: 100%;
+
+    .product-card .card-body {
+        flex: 1;
     }
+
     .price {
-        font-size: 1.2rem;
-        color: #333;
+        color: #0d6efd;
+        font-weight: 600;
+        font-size: 1.1rem;
     }
+
     .view-btn {
-        transition:
-            background-color 0.3s,
-            transform 0.2s;
+        transition: all 0.3s;
     }
+
     .view-btn:hover {
-        background-color: #00ccff;
         transform: scale(1.05);
     }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 900px;
+        position: relative;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6c757d;
+    }
+
+    .modal-close:hover {
+        color: #0d6efd;
+    }
+
+    .text-truncate-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
     .section-title {
         position: relative;
         display: inline-block;
     }
+    
     .section-title::after {
         content: "";
         position: absolute;
@@ -239,40 +444,36 @@
         transform-origin: center;
         transition: transform 300ms ease-out;
     }
+    
     .section-title:hover::after {
         transform: translateX(-50%) scaleX(1);
     }
 
-    /* Modal styles */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1050;
-    }
-    .modal-content {
-        background: #fff;
-        padding: 2rem;
-        border-radius: 8px;
-        max-width: 400px;
-        width: 90%;
-        position: relative;
-        text-align: center;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    }
-    .modal-close {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        background: transparent;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
+    @media (max-width: 768px) {
+        .bg-personalizado {
+            background-size: 150px;
+        }
+        
+        .modal-content {
+            padding: 1rem;
+            max-width: 95%;
+        }
+
+        .modal-content .row {
+            flex-direction: column;
+        }
+
+        .modal-content img {
+            max-height: 300px !important;
+            margin-bottom: 1rem;
+        }
+        
+        .d-flex.gap-2 {
+            flex-direction: column;
+        }
+        
+        .d-flex.gap-2 .btn {
+            width: 100%;
+        }
     }
 </style>
