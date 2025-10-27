@@ -12,7 +12,7 @@
         },
         {
             title: "Guía de Tallas",
-            content: `Nuestras tallas siguen medidas oversize. Usa nuestro configurador 3D: sube una foto frontal y lateral para recomendación precisa. ¿Entre dos tallas? Te aconsejamos bajar una si prefieres fit ajustado.`,
+            content: `Nuestras tallas siguen medidas oversize.`,
         },
         {
             title: "Devoluciones Premium",

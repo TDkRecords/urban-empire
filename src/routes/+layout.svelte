@@ -6,11 +6,11 @@
 
 <div class="app-wrapper">
     <Navbar />
-    
+
     <main class="main-content">
         <slot />
     </main>
-    
+
     <Footer />
     <CartButton />
 </div>
@@ -36,7 +36,6 @@
 
     .main-content {
         flex: 1 0 auto;
-        padding-bottom: 80px; /* Space for cart button */
     }
 
     :global(footer) {
