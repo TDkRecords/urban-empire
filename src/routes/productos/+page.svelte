@@ -38,46 +38,42 @@
         
         addingToCart = true;
         try {
+            // Validar que el producto tenga stock
+            if (product.stock <= 0) {
+                alert('Este producto no tiene stock disponible');
+                addingToCart = false;
+                return;
+            }
+
             await cart.addToCart({
                 ...product,
                 // Mapear los campos según la estructura del dashboard
-                title: product.nombre || product.title,
-                description: product.descripcion || product.description,
+                title: product.nombre || product.title || 'Producto sin nombre',
+                nombre: product.nombre || product.title || 'Producto sin nombre',
+                description: product.descripcion || product.description || '',
+                descripcion: product.descripcion || product.description || '',
                 price: typeof product.precio === 'number' 
                     ? `$${product.precio.toLocaleString('es-CO')}` 
                     : (product.price || '$0'),
-                precio: product.precio,
-                imageUrl: product.imagen || product.imageUrl || product.image,
-                imagen: product.imagen,
-                stock: product.stock || 10,
+                precio: typeof product.precio === 'number' ? product.precio : parseFloat(product.price) || 0,
+                imageUrl: product.imagen || product.imageUrl || product.image || '',
+                imagen: product.imagen || product.imageUrl || product.image || '',
+                stock: parseInt(product.stock) || 0,
                 // Mantener la categoría si existe
-                ...(product.categoria && { categoria: product.categoria }),
+                categoria: product.categoria || '',
                 ...(selectedSize && { selectedSize }),
                 ...(selectedColor && { selectedColor })
             });
             
-            // Mostrar feedback visual
-            const button = event?.target;
-            if (button) {
-                const originalText = button.innerHTML;
-                button.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Agregado';
-                button.classList.add('btn-success');
-                button.classList.remove('btn-primary');
-                
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.classList.remove('btn-success');
-                    button.classList.add('btn-primary');
-                }, 2000);
-            }
-            
             // Cerrar modal después de agregar
             setTimeout(() => {
                 closeModal();
-            }, 1500);
+                selectedSize = null;
+                selectedColor = null;
+            }, 500);
         } catch (error) {
             console.error('Error al agregar al carrito:', error);
-            alert('Error al agregar el producto al carrito');
+            alert('Error al agregar el producto al carrito. Por favor, inicia sesión primero.');
         } finally {
             addingToCart = false;
         }
@@ -135,53 +131,64 @@
                         in:fly={{ y: 50, duration: 600, delay: i * 100 }}
                     >
                         <div
-                            class="card h-100 border-0 product-card"
+                            class="card h-100 border-0 product-card shadow-lg"
                             in:scale={{ duration: 400, delay: 300 + i * 100 }}
                         >
-                            {#if product.imagen || product.imageUrl}
-                                <img
-                                    src={product.imagen || product.imageUrl}
-                                    class="card-img-top img-fluid"
-                                    alt={product.nombre || product.title || 'Producto'}
-                                    style="height: 300px; object-fit: cover;"
-                                    on:error={(e) => {
-                                        e.target.src = 'https://via.placeholder.com/300x300?text=Imagen+no+disponible';
-                                    }}
-                                />
-                            {:else}
-                                <div
-                                    class="bg-light d-flex align-items-center justify-content-center"
-                                    style="height: 300px;"
-                                >
-                                    <span class="text-muted">Sin imagen</span>
+                            <div class="card-img-wrapper position-relative overflow-hidden">
+                                {#if product.imagen || product.imageUrl}
+                                    <img
+                                        src={product.imagen || product.imageUrl}
+                                        class="card-img-top img-fluid"
+                                        alt={product.nombre || product.title || 'Producto'}
+                                        on:error={(e) => {
+                                            e.target.src = 'https://via.placeholder.com/300x300?text=Imagen+no+disponible';
+                                        }}
+                                    />
+                                {:else}
+                                    <div
+                                        class="bg-gradient d-flex align-items-center justify-content-center"
+                                        style="height: 350px;"
+                                    >
+                                        <span class="text-white fs-5">Sin imagen</span>
+                                    </div>
+                                {/if}
+                                {#if product.stock <= 5 && product.stock > 0}
+                                    <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-3">
+                                        ¡Últimas unidades!
+                                    </span>
+                                {:else if product.stock === 0}
+                                    <span class="badge bg-danger position-absolute top-0 end-0 m-3">
+                                        Agotado
+                                    </span>
+                                {/if}
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div class="mb-2">
+                                    {#if product.categoria}
+                                        <span class="badge bg-secondary mb-2">{product.categoria}</span>
+                                    {/if}
                                 </div>
-                            {/if}
-                            <div class="card-body text-center">
-                                <h5 class="card-title FontTitle">
+                                <h5 class="card-title FontTitle fw-bold mb-2">
                                     {product.nombre || product.title}
                                 </h5>
                                 <p
-                                    class="card-text FontBody small text-truncate-3"
-                                    style="max-height: 4.5em; overflow: hidden;"
+                                    class="card-text FontBody text-muted flex-grow-1"
+                                    style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"
                                 >
-                                    {product.descripcion || product.description}
+                                    {product.descripcion || product.description || 'Sin descripción'}
                                 </p>
-                            </div>
-                            <div
-                                class="card-footer bg-white border-0 text-center mb-2"
-                            >
-                                <span class="FontTitle price">
-                                    {typeof product.precio === "number"
-                                        ? `$${product.precio.toLocaleString("es-CO")}`
-                                        : (product.price || '$0')}
-                                </span>
-                                <div
-                                    class="mt-2 d-flex justify-content-center gap-2"
-                                >
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <span class="FontTitle price fs-4 fw-bold text-primary">
+                                        {typeof product.precio === "number"
+                                            ? `$${product.precio.toLocaleString("es-CO")}`
+                                            : (product.price || '$0')}
+                                    </span>
                                     <button
                                         on:click={() => openModal(product)}
-                                        class="btn btn-info btn-sm view-btn"
+                                        class="btn btn-primary btn-modern"
+                                        disabled={product.stock === 0}
                                     >
+                                        <i class="bi bi-eye me-1"></i>
                                         Ver más
                                     </button>
                                 </div>
@@ -347,39 +354,75 @@
     }
 
     .product-card {
-        transition:
-            transform 0.3s,
-            box-shadow 0.3s;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 12px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: white;
+        border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .product-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        transform: translateY(-12px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     }
 
-    .product-card .card-body {
-        flex: 1;
+    .card-img-wrapper {
+        position: relative;
+        height: 350px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .card-img-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .product-card:hover .card-img-wrapper img {
+        transform: scale(1.1);
     }
 
     .price {
-        color: #0d6efd;
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+    }
+
+    .btn-modern {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
         font-weight: 600;
-        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
-    .view-btn {
-        transition: all 0.3s;
+    .btn-modern:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
     }
 
-    .view-btn:hover {
-        transform: scale(1.05);
+    .btn-modern:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
     }
 
     .modal-overlay {

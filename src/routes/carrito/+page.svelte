@@ -42,10 +42,15 @@
     function calculateTotal() {
         total = cartItems.reduce((sum, item) => {
             // Usar precio numérico si está disponible, de lo contrario convertir de string
-            const price = typeof item.precio === 'number' 
-                ? item.precio 
-                : parseFloat((item.price || '0').replace(/[^0-9.-]+/g, ''));
-            return sum + (price * item.quantity);
+            let price = 0;
+            if (typeof item.precio === 'number') {
+                price = item.precio;
+            } else if (typeof item.price === 'string') {
+                price = parseFloat(item.price.replace(/[^0-9.-]+/g, '')) || 0;
+            } else if (typeof item.price === 'number') {
+                price = item.price;
+            }
+            return sum + (price * (item.quantity || 1));
         }, 0);
     }
     
@@ -65,7 +70,8 @@
     
     function formatPrice(price) {
         // Formatear el precio con separadores de miles
-        return `$${parseFloat(price).toLocaleString('es-CO')}`;
+        const numPrice = typeof price === 'number' ? price : parseFloat(price) || 0;
+        return `$${numPrice.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
     }
 </script>
 
@@ -118,7 +124,7 @@
                         <tbody>
                             {#each cartItems as item (item.id)}
                                 <tr in:fly={{ y: 20, duration: 300 }}>
-                                    <td>
+                                    <td data-label="Producto">
                                         <div class="d-flex align-items-center">
                                             <img 
                                                 src={item.imageUrl || item.imagen || 'https://via.placeholder.com/80?text=Sin+imagen'} 
@@ -138,16 +144,17 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="align-middle">
+                                    <td class="align-middle" data-label="Precio">
                                         {formatPrice(typeof item.precio === 'number' ? item.precio : (item.price || 0))}
                                     </td>
-                                    <td class="align-middle">
+                                    <td class="align-middle" data-label="Cantidad">
                                         <div class="input-group" style="width: 120px;">
                                             <button 
                                                 class="btn btn-outline-secondary" 
                                                 type="button"
                                                 on:click={() => updateQuantity(item, item.quantity - 1)}
                                                 disabled={item.quantity <= 1}
+                                                aria-label="Disminuir cantidad"
                                             >
                                                 -
                                             </button>
@@ -156,18 +163,20 @@
                                                 class="form-control text-center" 
                                                 value={item.quantity}
                                                 readonly
+                                                aria-label="Cantidad actual"
                                             >
                                             <button 
                                                 class="btn btn-outline-secondary" 
                                                 type="button"
                                                 on:click={() => updateQuantity(item, item.quantity + 1)}
                                                 disabled={item.quantity >= item.stock}
+                                                aria-label="Aumentar cantidad"
                                             >
                                                 +
                                             </button>
                                         </div>
                                     </td>
-                                    <td class="align-middle">
+                                    <td class="align-middle" data-label="Total">
                                         {#if typeof item.precio === 'number'}
                                             {formatPrice(item.precio * item.quantity)}
                                         {:else}
@@ -178,7 +187,7 @@
                                         <button 
                                             class="btn btn-link text-danger"
                                             on:click={() => removeItem(item.id)}
-                                            aria-label="Eliminar producto"
+                                            aria-label="Eliminar {item.title || item.nombre}"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
                                                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
@@ -198,6 +207,40 @@
                     </table>
                 </div>
                 
+                <!-- Resumen de compra -->
+                <div class="card mt-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title FontTitle mb-3">Resumen de Compra</h5>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span class="fw-bold">{formatPrice(total)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Envío:</span>
+                            <span class="text-muted">Calculado en el pago</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="fs-5 fw-bold">Total:</span>
+                            <span class="fs-5 fw-bold text-primary">{formatPrice(total)}</span>
+                        </div>
+                        
+                        <a 
+                            href="https://www.paypal.com/paypalme/castro1517" 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="btn btn-primary w-100 btn-paypal mb-2"
+                        >
+                            <i class="bi bi-paypal me-2"></i>
+                            Pagar con PayPal
+                        </a>
+                        
+                        <p class="text-muted small text-center mb-0">
+                            Serás redirigido a PayPal para completar tu compra de forma segura
+                        </p>
+                    </div>
+                </div>
+
                 <div class="d-flex justify-content-between mt-4">
                     <a href="/productos" class="btn btn-outline-secondary">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left me-2" viewBox="0 0 16 16">
@@ -205,21 +248,13 @@
                         </svg>
                         Seguir comprando
                     </a>
-                    <div>
-                        <button class="btn btn-outline-danger me-2" on:click={() => cart.clearCart()}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash me-2" viewBox="0 0 16 16">
-                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
-                            </svg>
-                            Vaciar carrito
-                        </button>
-                        <a href="/checkout" class="btn btn-primary">
-                            Proceder al pago
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right ms-2" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"/>
-                            </svg>
-                        </a>
-                    </div>
+                    <button class="btn btn-outline-danger" on:click={() => cart.clearCart()}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash me-2" viewBox="0 0 16 16">
+                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                        </svg>
+                        Vaciar carrito
+                    </button>
                 </div>
             {/if}
         </div>
@@ -253,6 +288,35 @@
     .btn-link:hover {
         text-decoration: none;
     }
+
+    .btn-paypal {
+        background: linear-gradient(135deg, #0070ba 0%, #1546a0 100%);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 112, 186, 0.3);
+    }
+
+    .btn-paypal:hover {
+        background: linear-gradient(135deg, #005a94 0%, #0f3a7f 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 112, 186, 0.4);
+    }
+
+    .btn-paypal i {
+        font-size: 1.3rem;
+    }
+
+    .card {
+        border-radius: 12px;
+        border: none;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
     
     @media (max-width: 768px) {
         .table-responsive {
@@ -265,27 +329,40 @@
         
         .table tbody tr {
             display: block;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             border: 1px solid #dee2e6;
-            border-radius: 0.25rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: white;
         }
         
         .table tbody td {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            border-bottom: 1px solid #dee2e6;
+            display: block;
+            text-align: right;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+        }
+
+        .table tbody td:first-child {
+            text-align: center;
+            padding: 1rem;
         }
         
         .table tbody td::before {
             content: attr(data-label);
+            float: left;
             font-weight: 600;
-            margin-right: 1rem;
+            color: #6c757d;
         }
         
         .table tbody td:last-child {
             border-bottom: none;
+            text-align: center;
+        }
+
+        .table tbody td:last-child::before {
+            display: none;
         }
         
         .d-flex.justify-content-between {
@@ -293,9 +370,19 @@
             gap: 1rem;
         }
         
+        .d-flex.justify-content-between > * {
+            width: 100%;
+        }
+
         .d-flex.justify-content-between .btn {
             width: 100%;
             margin: 0.25rem 0;
+        }
+
+        .input-group {
+            width: 100% !important;
+            max-width: 200px;
+            margin: 0 auto;
         }
     }
 </style>
