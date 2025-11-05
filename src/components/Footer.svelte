@@ -15,7 +15,7 @@
         {
             name: "Instagram",
             icon: "fab fa-instagram",
-            url: "https://www.instagram.com/_axeljosh_/",
+            url: "https://www.instagram.com/daniel.23a/",
         },
         {
             name: "LinkedIn",
