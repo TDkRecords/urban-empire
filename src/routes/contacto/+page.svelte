@@ -77,7 +77,7 @@
             <form
                 action="https://formsubmit.co/urbanempire.colombia@gmail.com"
                 method="POST"
-                on:submit|preventDefault={onSubmitHandler}
+                on:submit={onSubmitHandler}
                 class="contact-form mx-auto"
                 in:fly={{ y: 50, duration: 600, delay: 800 }}
             >
@@ -105,7 +105,7 @@
                     <div class="col-12">
                         <textarea
                             class="FontBody form-control py-2 border-dark input-animated"
-                            name="description"
+                            name="descripcion"
                             rows="5"
                             placeholder="Describe tu consulta..."
                             required
@@ -135,7 +135,7 @@
                 <input
                     type="hidden"
                     name="_next"
-                    value="https://urbanempire.vercel.app/"
+                    value="https://urbanempire.store/"
                 />
             </form>
         </div>
