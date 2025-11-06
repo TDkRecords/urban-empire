@@ -1,11 +1,11 @@
 <script>
-	import { user, userProfile } from '$lib/stores/authStore.js';
-	import { db } from '$lib/assets/js/firebase.js';
-	import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { browser } from '$app/environment';
-	import 'bootstrap/dist/css/bootstrap.min.css';
+	import { user, userProfile } from "$lib/stores/authStore.js";
+	import { db } from "$lib/assets/js/firebase.js";
+	import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+	import { onMount } from "svelte";
+	import { goto } from "$app/navigation";
+	import { browser } from "$app/environment";
+	import "bootstrap/dist/css/bootstrap.min.css";
 
 	let loading = true;
 	let saving = false;
@@ -14,11 +14,11 @@
 
 	// Datos del formulario
 	let formData = {
-		nombre: '',
-		apellido: '',
-		edad: '',
-		direccion: '',
-		codigoPostal: ''
+		nombre: "",
+		apellido: "",
+		edad: "",
+		direccion: "",
+		codigoPostal: "",
 	};
 
 	// Datos originales para comparar cambios
@@ -30,7 +30,7 @@
 		// Verificar si el usuario está autenticado
 		const unsubscribe = user.subscribe(async (currentUser) => {
 			if (!currentUser) {
-				goto('/');
+				goto("/");
 				return;
 			}
 
@@ -44,16 +44,16 @@
 	async function loadUserProfile(uid) {
 		loading = true;
 		try {
-			const userDoc = await getDoc(doc(db, 'usuarios', uid));
-			
+			const userDoc = await getDoc(doc(db, "usuarios", uid));
+
 			if (userDoc.exists()) {
 				const data = userDoc.data();
 				formData = {
-					nombre: data.nombre || '',
-					apellido: data.apellido || '',
-					edad: data.edad || '',
-					direccion: data.direccion || '',
-					codigoPostal: data.codigoPostal || ''
+					nombre: data.nombre || "",
+					apellido: data.apellido || "",
+					edad: data.edad || "",
+					direccion: data.direccion || "",
+					codigoPostal: data.codigoPostal || "",
 				};
 				originalData = { ...formData };
 				hasProfile = true;
@@ -64,7 +64,7 @@
 				editMode = true;
 			}
 		} catch (error) {
-			console.error('Error al cargar perfil:', error);
+			console.error("Error al cargar perfil:", error);
 		} finally {
 			loading = false;
 		}
@@ -74,8 +74,13 @@
 		if (!$user) return;
 
 		// Validar campos obligatorios
-		if (!formData.nombre || !formData.apellido || !formData.edad || !formData.direccion) {
-			alert('Por favor, completa todos los campos obligatorios');
+		if (
+			!formData.nombre ||
+			!formData.apellido ||
+			!formData.edad ||
+			!formData.direccion
+		) {
+			alert("Por favor, completa todos los campos obligatorios");
 			return;
 		}
 
@@ -86,22 +91,22 @@
 				apellido: formData.apellido,
 				edad: parseInt(formData.edad),
 				direccion: formData.direccion,
-				codigoPostal: formData.codigoPostal || '',
+				codigoPostal: formData.codigoPostal || "",
 				email: $user.email,
 				photoURL: $user.photoURL,
 				displayName: $user.displayName,
-				updatedAt: new Date().toISOString()
+				updatedAt: new Date().toISOString(),
 			};
 
 			if (hasProfile) {
 				// Actualizar perfil existente
-				await updateDoc(doc(db, 'usuarios', $user.uid), userData);
-				alert('Perfil actualizado exitosamente');
+				await updateDoc(doc(db, "usuarios", $user.uid), userData);
+				alert("Perfil actualizado exitosamente");
 			} else {
 				// Crear nuevo perfil
 				userData.createdAt = new Date().toISOString();
-				await setDoc(doc(db, 'usuarios', $user.uid), userData);
-				alert('Perfil creado exitosamente');
+				await setDoc(doc(db, "usuarios", $user.uid), userData);
+				alert("Perfil creado exitosamente");
 				hasProfile = true;
 			}
 
@@ -109,8 +114,8 @@
 			editMode = false;
 			userProfile.set(userData);
 		} catch (error) {
-			console.error('Error al guardar perfil:', error);
-			alert('Error al guardar el perfil');
+			console.error("Error al guardar perfil:", error);
+			alert("Error al guardar el perfil");
 		} finally {
 			saving = false;
 		}
@@ -125,7 +130,7 @@
 			formData = { ...originalData };
 			editMode = false;
 		} else {
-			goto('/');
+			goto("/");
 		}
 	}
 </script>
@@ -148,18 +153,33 @@
 				<div class="col-lg-8">
 					<div class="card shadow-sm">
 						<div class="card-header bg-gradient text-white">
-							<div class="d-flex align-items-center justify-content-between">
+							<div
+								class="d-flex align-items-center justify-content-between"
+							>
 								<div class="d-flex align-items-center gap-3">
 									{#if $user?.photoURL}
-										<img src={$user.photoURL} alt={$user.displayName} class="profile-avatar" />
+										<img
+											src={$user.photoURL}
+											alt={$user.displayName}
+											class="profile-avatar"
+										/>
 									{/if}
 									<div>
-										<h4 class="mb-0">{hasProfile ? 'Mi Perfil' : 'Completa tu Perfil'}</h4>
-										<small class="opacity-75">{$user?.email}</small>
+										<h4 class="mb-0 text-black">
+											{hasProfile
+												? "Mi Perfil"
+												: "Completa tu Perfil"}
+										</h4>
+										<small class="opacity-75 text-dark"
+											>{$user?.email}</small
+										>
 									</div>
 								</div>
 								{#if hasProfile && !editMode}
-									<button class="btn btn-light btn-sm" on:click={handleEdit}>
+									<button
+										class="btn btn-light btn-sm"
+										on:click={handleEdit}
+									>
 										<i class="fa-solid fa-pen"></i> Editar
 									</button>
 								{/if}
@@ -170,7 +190,8 @@
 							{#if !hasProfile}
 								<div class="alert alert-info mb-4">
 									<i class="fa-solid fa-circle-info"></i>
-									Por favor, completa tu información de perfil para continuar.
+									Por favor, completa tu información de perfil
+									para continuar.
 								</div>
 							{/if}
 
@@ -178,7 +199,9 @@
 								<div class="row g-3">
 									<div class="col-md-6">
 										<label for="nombre" class="form-label">
-											Nombre <span class="text-danger">*</span>
+											Nombre <span class="text-danger"
+												>*</span
+											>
 										</label>
 										<input
 											type="text"
@@ -191,8 +214,13 @@
 									</div>
 
 									<div class="col-md-6">
-										<label for="apellido" class="form-label">
-											Apellido <span class="text-danger">*</span>
+										<label
+											for="apellido"
+											class="form-label"
+										>
+											Apellido <span class="text-danger"
+												>*</span
+											>
 										</label>
 										<input
 											type="text"
@@ -206,7 +234,9 @@
 
 									<div class="col-md-6">
 										<label for="edad" class="form-label">
-											Edad <span class="text-danger">*</span>
+											Edad <span class="text-danger"
+												>*</span
+											>
 										</label>
 										<input
 											type="number"
@@ -221,8 +251,14 @@
 									</div>
 
 									<div class="col-md-6">
-										<label for="codigoPostal" class="form-label">
-											Código Postal <span class="text-muted">(opcional)</span>
+										<label
+											for="codigoPostal"
+											class="form-label"
+										>
+											Código Postal <span
+												class="text-muted"
+												>(opcional)</span
+											>
 										</label>
 										<input
 											type="text"
@@ -234,8 +270,13 @@
 									</div>
 
 									<div class="col-12">
-										<label for="direccion" class="form-label">
-											Dirección <span class="text-danger">*</span>
+										<label
+											for="direccion"
+											class="form-label"
+										>
+											Dirección <span class="text-danger"
+												>*</span
+											>
 										</label>
 										<textarea
 											class="form-control"
@@ -249,7 +290,9 @@
 								</div>
 
 								{#if editMode}
-									<div class="d-flex gap-2 justify-content-end mt-4">
+									<div
+										class="d-flex gap-2 justify-content-end mt-4"
+									>
 										<button
 											type="button"
 											class="btn btn-outline-secondary"
@@ -258,13 +301,23 @@
 										>
 											Cancelar
 										</button>
-										<button type="submit" class="btn btn-custom-primary" disabled={saving}>
+										<button
+											type="submit"
+											class="btn btn-custom-primary"
+											disabled={saving}
+										>
 											{#if saving}
-												<span class="spinner-border spinner-border-sm me-2" role="status"></span>
+												<span
+													class="spinner-border spinner-border-sm me-2"
+													role="status"
+												></span>
 												Guardando...
 											{:else}
-												<i class="fa-solid fa-save me-2"></i>
-												{hasProfile ? 'Actualizar Perfil' : 'Guardar Perfil'}
+												<i class="fa-solid fa-save me-2"
+												></i>
+												{hasProfile
+													? "Actualizar Perfil"
+													: "Guardar Perfil"}
 											{/if}
 										</button>
 									</div>
@@ -277,29 +330,45 @@
 						<div class="card shadow-sm mt-4">
 							<div class="card-body">
 								<h5 class="card-title mb-3">
-									<i class="fa-solid fa-info-circle"></i> Información de la Cuenta
+									<i class="fa-solid fa-info-circle"></i> Información
+									de la Cuenta
 								</h5>
 								<div class="row g-3">
 									<div class="col-md-6">
-										<small class="text-muted d-block">Nombre completo</small>
-										<strong>{formData.nombre} {formData.apellido}</strong>
+										<small class="text-muted d-block"
+											>Nombre completo</small
+										>
+										<strong
+											>{formData.nombre}
+											{formData.apellido}</strong
+										>
 									</div>
 									<div class="col-md-6">
-										<small class="text-muted d-block">Correo electrónico</small>
+										<small class="text-muted d-block"
+											>Correo electrónico</small
+										>
 										<strong>{$user?.email}</strong>
 									</div>
 									<div class="col-md-6">
-										<small class="text-muted d-block">Edad</small>
+										<small class="text-muted d-block"
+											>Edad</small
+										>
 										<strong>{formData.edad} años</strong>
 									</div>
 									{#if formData.codigoPostal}
 										<div class="col-md-6">
-											<small class="text-muted d-block">Código Postal</small>
-											<strong>{formData.codigoPostal}</strong>
+											<small class="text-muted d-block"
+												>Código Postal</small
+											>
+											<strong
+												>{formData.codigoPostal}</strong
+											>
 										</div>
 									{/if}
 									<div class="col-12">
-										<small class="text-muted d-block">Dirección</small>
+										<small class="text-muted d-block"
+											>Dirección</small
+										>
 										<strong>{formData.direccion}</strong>
 									</div>
 								</div>
@@ -323,6 +392,7 @@
 	}
 
 	.profile-avatar {
+		background-color: black;
 		width: 60px;
 		height: 60px;
 		border-radius: 50%;
