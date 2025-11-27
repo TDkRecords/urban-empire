@@ -1,154 +1,270 @@
 <script>
 	import { db } from "$lib/assets/js/firebase.js";
-	import { collection, query, where, getDocs } from "firebase/firestore";
+	import {
+		collection,
+		addDoc,
+		updateDoc,
+		deleteDoc,
+		doc,
+		onSnapshot,
+	} from "firebase/firestore";
+
 	import { goto } from "$app/navigation";
+	import { browser } from "$app/environment";
 	import { onMount } from "svelte";
-	import 'bootstrap/dist/css/bootstrap.min.css';
 
-	let username = "";
-	let password = "";
-	let error = "";
-	let loading = false;
+	// Componentes
+	import TabsNavigation from "$lib/components/admin/TabsNavigation.svelte";
+	import ProductsSection from "$lib/components/admin/ProductsSection.svelte";
+	import SuppliersSection from "$lib/components/admin/SuppliersSection.svelte";
+	import ProductForm from "$lib/components/admin/ProductForm.svelte";
+	import SupplierForm from "$lib/components/admin/SupplierForm.svelte";
 
-	onMount(() => {
-		// Check if already logged in
+	// Estado general
+	let adminUser = "";
+	let activeTab = "productos";
+
+	// Productos
+	let productos = [];
+	let loadingProducts = true;
+	let currentProduct = null;
+	let productOffcanvasElement;
+	let productOffcanvasInstance = null;
+	let unsubscribeProducts = null;
+
+	// Proveedores
+	let proveedores = [];
+	let loadingSuppliers = true;
+	let currentSupplier = null;
+	let supplierOffcanvasElement;
+	let supplierOffcanvasInstance = null;
+	let unsubscribeSuppliers = null;
+
+	onMount(async () => {
+		if (!browser) return;
+
+		// -----------------------------
+		// 🔐 PROTECCIÓN DE RUTA REAL
+		// -----------------------------
 		const isLoggedIn = sessionStorage.getItem("adminLoggedIn");
-		if (isLoggedIn === "true") {
-			goto("/admin-panel-2025/dashboard");
+		const user = sessionStorage.getItem("adminUser");
+
+		if (isLoggedIn !== "true" || !user) {
+			goto("/admin-panel-2025", { replaceState: true });
+			return;
 		}
+
+		adminUser = user;
+
+		// -----------------------------
+		// 🔥 BOOTSTRAP CLIENT-SIDE
+		// -----------------------------
+		const bootstrap = await import("bootstrap");
+
+		const initOffcanvas = () => {
+			if (productOffcanvasElement && !productOffcanvasInstance) {
+				productOffcanvasInstance = new bootstrap.Offcanvas(
+					productOffcanvasElement,
+				);
+			}
+			if (supplierOffcanvasElement && !supplierOffcanvasInstance) {
+				supplierOffcanvasInstance = new bootstrap.Offcanvas(
+					supplierOffcanvasElement,
+				);
+			}
+		};
+
+		if (document.readyState === "complete") initOffcanvas();
+		else window.addEventListener("load", initOffcanvas);
+
+		// -----------------------------
+		// 🔥 SUSCRIPCIONES A FIRESTORE
+		// -----------------------------
+		unsubscribeProducts = onSnapshot(
+			collection(db, "productos"),
+			(snapshot) => {
+				productos = snapshot.docs.map((doc) => ({
+					id: doc.id,
+					...doc.data(),
+				}));
+				loadingProducts = false;
+			},
+		);
+
+		unsubscribeSuppliers = onSnapshot(
+			collection(db, "proveedores"),
+			(snapshot) => {
+				proveedores = snapshot.docs.map((doc) => ({
+					id: doc.id,
+					...doc.data(),
+				}));
+				loadingSuppliers = false;
+			},
+		);
+
+		// Cleanup
+		return () => {
+			unsubscribeProducts?.();
+			unsubscribeSuppliers?.();
+		};
 	});
 
-	async function handleLogin() {
-		error = "";
-		loading = true;
-
+	// -----------------------------
+	// 🔥 CRUD PRODUCTOS
+	// -----------------------------
+	async function handleSaveProduct(data) {
 		try {
-			// Query the administradores collection
-			const adminRef = collection(db, "administradores");
-			const q = query(
-				adminRef,
-				where("usuario", "==", username),
-				where("contraseña", "==", password),
-			);
-
-			const querySnapshot = await getDocs(q);
-
-			if (!querySnapshot.empty) {
-				// Login successful
-				sessionStorage.setItem("adminLoggedIn", "true");
-				sessionStorage.setItem("adminUser", username);
-				goto("/admin-panel-2025/dashboard");
+			if (currentProduct) {
+				await updateDoc(doc(db, "productos", currentProduct.id), data);
 			} else {
-				error = "Usuario o contraseña incorrectos";
+				await addDoc(collection(db, "productos"), data);
 			}
+			closeProductModal();
 		} catch (err) {
-			console.error("Error al iniciar sesión:", err);
-			error = "Error al iniciar sesión. Por favor, intenta de nuevo.";
-		} finally {
-			loading = false;
+			console.error("Error guardando producto:", err);
 		}
 	}
 
-	function handleSubmit(e) {
-		e.preventDefault();
-		handleLogin();
+	async function handleDeleteProduct(p) {
+		if (confirm(`¿Eliminar producto "${p.nombre}"?`)) {
+			await deleteDoc(doc(db, "productos", p.id));
+		}
+	}
+
+	// -----------------------------
+	// 🔥 CRUD PROVEEDORES
+	// -----------------------------
+	async function handleSaveSupplier(data) {
+		try {
+			if (currentSupplier) {
+				await updateDoc(
+					doc(db, "proveedores", currentSupplier.id),
+					data,
+				);
+			} else {
+				await addDoc(collection(db, "proveedores"), data);
+			}
+			closeSupplierModal();
+		} catch (err) {
+			console.error("Error guardando proveedor:", err);
+		}
+	}
+
+	async function handleDeleteSupplier(s) {
+		if (confirm(`¿Eliminar proveedor "${s.nombre}"?`)) {
+			await deleteDoc(doc(db, "proveedores", s.id));
+		}
+	}
+
+	// -----------------------------
+	// 🔥 MODALES PRODUCTOS
+	// -----------------------------
+	function openProductModal(product = null) {
+		currentProduct = product;
+		productOffcanvasInstance?.show();
+	}
+
+	function closeProductModal() {
+		currentProduct = null;
+		productOffcanvasInstance?.hide();
+	}
+
+	// -----------------------------
+	// 🔥 MODALES PROVEEDORES
+	// -----------------------------
+	function openSupplierModal(supplier = null) {
+		currentSupplier = supplier;
+		supplierOffcanvasInstance?.show();
+	}
+
+	function closeSupplierModal() {
+		currentSupplier = null;
+		supplierOffcanvasInstance?.hide();
+	}
+
+	// -----------------------------
+	// 🔐 LOGOUT
+	// -----------------------------
+	function logout() {
+		sessionStorage.removeItem("adminLoggedIn");
+		sessionStorage.removeItem("adminUser");
+		goto("/admin-panel-2025", { replaceState: true });
 	}
 </script>
 
 <svelte:head>
-	<title>Admin Login - Urban Empire</title>
+	<title>Panel Administrativo — Urban Empire</title>
 </svelte:head>
 
-<div class="login-container">
-	<div class="container">
-		<div class="row justify-content-center">
-			<div class="col-md-5 col-lg-4">
-				<div class="card shadow-lg border-0 login-card">
-					<div class="card-body p-5">
-						<h1 class="text-center mb-2">Panel Administrativo</h1>
-						<p class="text-center text-muted mb-4">Urban Empire</p>
+<div class="min-vh-100 bg-light">
+	<header class="bg-dark text-white py-3 shadow-sm">
+		<div
+			class="container d-flex justify-content-between align-items-center"
+		>
+			<h1 class="h4 mb-0">Panel Administrativo</h1>
 
-						<form on:submit={handleSubmit}>
-							<div class="mb-3">
-								<label for="username" class="form-label">Usuario</label>
-								<input
-									type="text"
-									id="username"
-									class="form-control"
-									bind:value={username}
-									required
-									disabled={loading}
-									placeholder="Ingresa tu usuario"
-								/>
-							</div>
+			<div class="d-flex align-items-center gap-3">
+				<small class="text-white-50">{adminUser}</small>
 
-							<div class="mb-3">
-								<label for="password" class="form-label">Contraseña</label>
-								<input
-									type="password"
-									id="password"
-									class="form-control"
-									bind:value={password}
-									required
-									disabled={loading}
-									placeholder="Ingresa tu contraseña"
-								/>
-							</div>
-
-							{#if error}
-								<div class="alert alert-danger" role="alert">
-									{error}
-								</div>
-							{/if}
-
-							<button type="submit" disabled={loading} class="btn btn-primary w-100 login-btn">
-								{loading ? "Iniciando sesión..." : "Iniciar Sesión"}
-							</button>
-						</form>
-					</div>
-				</div>
+				<button class="btn btn-outline-light btn-sm" on:click={logout}>
+					Cerrar sesión
+				</button>
 			</div>
 		</div>
-	</div>
+	</header>
+
+	<main class="py-4">
+		<div class="container">
+			<TabsNavigation bind:activeTab {productos} {proveedores} />
+
+			{#if activeTab === "productos"}
+				<ProductsSection
+					{productos}
+					loading={loadingProducts}
+					openEditProductModal={openProductModal}
+					{handleDeleteProduct}
+				/>
+			{:else}
+				<SuppliersSection
+					{proveedores}
+					loading={loadingSuppliers}
+					openCreateSupplierModal={() => openSupplierModal()}
+					openEditSupplierModal={openSupplierModal}
+					{handleDeleteSupplier}
+				/>
+			{/if}
+		</div>
+	</main>
 </div>
 
-<style>
-	.login-container {
-		min-height: 100vh;
-		display: flex;
-		align-items: center;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		padding: 20px;
-	}
+<!-- Offcanvas Productos -->
+<div
+	bind:this={productOffcanvasElement}
+	class="offcanvas offcanvas-end"
+	style="--bs-offcanvas-width: 500px"
+	tabindex="-1"
+	id="productOffcanvas"
+>
+	<ProductForm
+		product={currentProduct || {}}
+		isEditing={!!currentProduct}
+		onSave={handleSaveProduct}
+		onClose={closeProductModal}
+	/>
+</div>
 
-	.login-card {
-		border-radius: 12px;
-	}
-
-	h1 {
-		font-size: 28px;
-		color: #333;
-	}
-
-	.login-btn {
-		padding: 14px;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		border: none;
-		font-size: 16px;
-		font-weight: 600;
-		transition:
-			transform 0.2s,
-			box-shadow 0.2s;
-	}
-
-	.login-btn:hover:not(:disabled) {
-		transform: translateY(-2px);
-		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-	}
-
-	.login-btn:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-</style>
+<!-- Offcanvas Proveedores -->
+<div
+	bind:this={supplierOffcanvasElement}
+	class="offcanvas offcanvas-end"
+	style="--bs-offcanvas-width: 500px"
+	tabindex="-1"
+	id="supplierOffcanvas"
+>
+	<SupplierForm
+		supplier={currentSupplier || {}}
+		isEditing={!!currentSupplier}
+		onSave={handleSaveSupplier}
+		onClose={closeSupplierModal}
+	/>
+</div>

@@ -35,12 +35,12 @@
 
     async function addToCart(product) {
         if (addingToCart) return;
-        
+
         addingToCart = true;
         try {
             // Validar que el producto tenga stock
             if (product.stock <= 0) {
-                alert('Este producto no tiene stock disponible');
+                alert("Este producto no tiene stock disponible");
                 addingToCart = false;
                 return;
             }
@@ -48,23 +48,30 @@
             await cart.addToCart({
                 ...product,
                 // Mapear los campos según la estructura del dashboard
-                title: product.nombre || product.title || 'Producto sin nombre',
-                nombre: product.nombre || product.title || 'Producto sin nombre',
-                description: product.descripcion || product.description || '',
-                descripcion: product.descripcion || product.description || '',
-                price: typeof product.precio === 'number' 
-                    ? `$${product.precio.toLocaleString('es-CO')}` 
-                    : (product.price || '$0'),
-                precio: typeof product.precio === 'number' ? product.precio : parseFloat(product.price) || 0,
-                imageUrl: product.imagen || product.imageUrl || product.image || '',
-                imagen: product.imagen || product.imageUrl || product.image || '',
+                title: product.nombre || product.title || "Producto sin nombre",
+                nombre:
+                    product.nombre || product.title || "Producto sin nombre",
+                description: product.descripcion || product.description || "",
+                descripcion: product.descripcion || product.description || "",
+                price:
+                    typeof product.precio === "number"
+                        ? `$${product.precio.toLocaleString("es-CO")}`
+                        : product.price || "$0",
+                precio:
+                    typeof product.precio === "number"
+                        ? product.precio
+                        : parseFloat(product.price) || 0,
+                imageUrl:
+                    product.imagen || product.imageUrl || product.image || "",
+                imagen:
+                    product.imagen || product.imageUrl || product.image || "",
                 stock: parseInt(product.stock) || 0,
                 // Mantener la categoría si existe
-                categoria: product.categoria || '',
+                categoria: product.categoria || "",
                 ...(selectedSize && { selectedSize }),
-                ...(selectedColor && { selectedColor })
+                ...(selectedColor && { selectedColor }),
             });
-            
+
             // Cerrar modal después de agregar
             setTimeout(() => {
                 closeModal();
@@ -72,8 +79,10 @@
                 selectedColor = null;
             }, 500);
         } catch (error) {
-            console.error('Error al agregar al carrito:', error);
-            alert('Error al agregar el producto al carrito. Por favor, inicia sesión primero.');
+            console.error("Error al agregar al carrito:", error);
+            alert(
+                "Error al agregar el producto al carrito. Por favor, inicia sesión primero.",
+            );
         } finally {
             addingToCart = false;
         }
@@ -134,14 +143,19 @@
                             class="card h-100 border-0 product-card shadow-lg"
                             in:scale={{ duration: 400, delay: 300 + i * 100 }}
                         >
-                            <div class="card-img-wrapper position-relative overflow-hidden">
+                            <div
+                                class="card-img-wrapper position-relative overflow-hidden"
+                            >
                                 {#if product.imagen || product.imageUrl}
                                     <img
                                         src={product.imagen || product.imageUrl}
                                         class="card-img-top img-fluid"
-                                        alt={product.nombre || product.title || 'Producto'}
+                                        alt={product.nombre ||
+                                            product.title ||
+                                            "Producto"}
                                         on:error={(e) => {
-                                            e.target.src = 'https://via.placeholder.com/300x300?text=Imagen+no+disponible';
+                                            e.target.src =
+                                                "https://via.placeholder.com/300x300?text=Imagen+no+disponible";
                                         }}
                                     />
                                 {:else}
@@ -149,15 +163,21 @@
                                         class="bg-gradient d-flex align-items-center justify-content-center"
                                         style="height: 350px;"
                                     >
-                                        <span class="text-white fs-5">Sin imagen</span>
+                                        <span class="text-white fs-5"
+                                            >Sin imagen</span
+                                        >
                                     </div>
                                 {/if}
                                 {#if product.stock <= 5 && product.stock > 0}
-                                    <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-3">
+                                    <span
+                                        class="badge bg-warning text-dark position-absolute top-0 end-0 m-3"
+                                    >
                                         ¡Últimas unidades!
                                     </span>
                                 {:else if product.stock === 0}
-                                    <span class="badge bg-danger position-absolute top-0 end-0 m-3">
+                                    <span
+                                        class="badge bg-danger position-absolute top-0 end-0 m-3"
+                                    >
                                         Agotado
                                     </span>
                                 {/if}
@@ -165,7 +185,9 @@
                             <div class="card-body d-flex flex-column">
                                 <div class="mb-2">
                                     {#if product.categoria}
-                                        <span class="badge bg-secondary mb-2">{product.categoria}</span>
+                                        <span class="badge bg-secondary mb-2"
+                                            >{product.categoria}</span
+                                        >
                                     {/if}
                                 </div>
                                 <h5 class="card-title FontTitle fw-bold mb-2">
@@ -175,13 +197,19 @@
                                     class="card-text FontBody text-muted flex-grow-1"
                                     style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"
                                 >
-                                    {product.descripcion || product.description || 'Sin descripción'}
+                                    {product.descripcion ||
+                                        product.description ||
+                                        "Sin descripción"}
                                 </p>
-                                <div class="d-flex justify-content-between align-items-center mt-3">
-                                    <span class="FontTitle price fs-4 fw-bold text-primary">
+                                <div
+                                    class="d-flex justify-content-between align-items-center mt-3"
+                                >
+                                    <span
+                                        class="FontTitle price fs-4 fw-bold text-primary"
+                                    >
                                         {typeof product.precio === "number"
                                             ? `$${product.precio.toLocaleString("es-CO")}`
-                                            : (product.price || '$0')}
+                                            : product.price || "$0"}
                                     </span>
                                     <button
                                         on:click={() => openModal(product)}
@@ -215,12 +243,16 @@
                         <div class="col-md-6">
                             {#if selectedProduct.imagen || selectedProduct.imageUrl}
                                 <img
-                                    src={selectedProduct.imagen || selectedProduct.imageUrl}
-                                    alt={selectedProduct.nombre || selectedProduct.title || 'Producto'}
+                                    src={selectedProduct.imagen ||
+                                        selectedProduct.imageUrl}
+                                    alt={selectedProduct.nombre ||
+                                        selectedProduct.title ||
+                                        "Producto"}
                                     class="img-fluid rounded mb-3"
                                     style="max-height: 400px; width: 100%; object-fit: contain;"
                                     on:error={(e) => {
-                                        e.target.src = 'https://via.placeholder.com/500x500?text=Imagen+no+disponible';
+                                        e.target.src =
+                                            "https://via.placeholder.com/500x500?text=Imagen+no+disponible";
                                     }}
                                 />
                             {:else}
@@ -234,22 +266,27 @@
                         </div>
                         <div class="col-md-6">
                             <h2 class="FontTitle mb-3">
-                                {selectedProduct.nombre || selectedProduct.title}
+                                {selectedProduct.nombre ||
+                                    selectedProduct.title}
                             </h2>
                             {#if selectedProduct.categoria}
                                 <div class="mb-2">
-                                    <span class="badge bg-secondary">{selectedProduct.categoria}</span>
+                                    <span class="badge bg-secondary"
+                                        >{selectedProduct.categoria}</span
+                                    >
                                 </div>
                             {/if}
                             <p class="FontBody mb-3">
-                                {selectedProduct.descripcion || selectedProduct.description}
+                                {selectedProduct.descripcion ||
+                                    selectedProduct.description}
                             </p>
 
                             <div class="mb-4">
                                 <h4 class="FontTitle price mb-3">
-                                    Precio: {typeof selectedProduct.precio === "number"
+                                    Precio: {typeof selectedProduct.precio ===
+                                    "number"
                                         ? `$${selectedProduct.precio.toLocaleString("es-CO")}`
-                                        : (selectedProduct.price || '$0')}
+                                        : selectedProduct.price || "$0"}
                                 </h4>
 
                                 {#if selectedProduct.stock > 0}
@@ -312,10 +349,15 @@
                                 <button
                                     class="btn btn-primary flex-grow-1"
                                     on:click={() => addToCart(selectedProduct)}
-                                    disabled={selectedProduct.stock <= 0 || addingToCart}
+                                    disabled={selectedProduct.stock <= 0 ||
+                                        addingToCart}
                                 >
                                     {#if addingToCart}
-                                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        <span
+                                            class="spinner-border spinner-border-sm me-2"
+                                            role="status"
+                                            aria-hidden="true"
+                                        ></span>
                                         Agregando...
                                     {:else}
                                         <i class="bi bi-cart-plus me-2"></i>
@@ -474,7 +516,7 @@
         position: relative;
         display: inline-block;
     }
-    
+
     .section-title::after {
         content: "";
         position: absolute;
@@ -487,7 +529,7 @@
         transform-origin: center;
         transition: transform 300ms ease-out;
     }
-    
+
     .section-title:hover::after {
         transform: translateX(-50%) scaleX(1);
     }
@@ -496,7 +538,7 @@
         .bg-personalizado {
             background-size: 150px;
         }
-        
+
         .modal-content {
             padding: 1rem;
             max-width: 95%;
@@ -510,11 +552,11 @@
             max-height: 300px !important;
             margin-bottom: 1rem;
         }
-        
+
         .d-flex.gap-2 {
             flex-direction: column;
         }
-        
+
         .d-flex.gap-2 .btn {
             width: 100%;
         }
