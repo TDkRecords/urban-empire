@@ -39,9 +39,19 @@
 	let supplierOffcanvasInstance = null;
 	let supplierOffcanvasElement;
 
-	// -----------------------------
-	// 🔥 PROTECCIÓN DE RUTA (ARREGLADO)
-	// -----------------------------
+	async function loadProducts() {
+		loadingProducts = true;
+		console.log("Cargando productos...");
+		try {
+			productos = await getProducts();
+			console.log("Productos cargados:", productos);
+		} catch (error) {
+			console.error("Error al cargar productos:", error);
+		} finally {
+			loadingProducts = false;
+		}
+	}
+
 	onMount(async () => {
 		if (!browser) return; // evita SSR
 
@@ -84,7 +94,7 @@
 		else window.addEventListener("load", initOffcanvas);
 
 		// Cargar datos
-		loadProductsRealtime();
+		loadProducts();
 		subscribeToSuppliers(handleSuppliersUpdate);
 
 		return () => {
@@ -92,32 +102,6 @@
 			unsubscribeFromSuppliers();
 		};
 	});
-
-	// -----------------------------
-	// 🔥 PRODUCTOS
-	// -----------------------------
-	function loadProductsRealtime() {
-		loadingProducts = true;
-		try {
-			unsubscribeProducts = onSnapshot(
-				collection(db, "productos"),
-				(snapshot) => {
-					productos = snapshot.docs.map((doc) => ({
-						id: doc.id,
-						...doc.data(),
-					}));
-					loadingProducts = false;
-				},
-				(error) => {
-					console.error("Error cargando productos:", error);
-					loadingProducts = false;
-				},
-			);
-		} catch (error) {
-			console.error("Error inicializando productos:", error);
-			loadingProducts = false;
-		}
-	}
 
 	async function handleSaveProduct(productData) {
 		try {

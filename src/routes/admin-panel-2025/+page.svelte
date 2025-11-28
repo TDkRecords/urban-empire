@@ -1,13 +1,32 @@
+<script context="module">
+	export const load = async () => {
+		if (import.meta.env.SSR) return {};
+
+		const isLoggedIn =
+			sessionStorage.getItem("adminLoggedIn") ||
+			localStorage.getItem("adminLoggedIn");
+		if (!isLoggedIn) {
+			return {
+				status: 302,
+				redirect: "/admin-panel-2025/login",
+			};
+		}
+
+		return {};
+	};
+</script>
+
 <script>
-	import { db } from "$lib/assets/js/firebase.js";
 	import {
 		collection,
+		getDocs,
 		addDoc,
 		updateDoc,
 		deleteDoc,
 		doc,
 		onSnapshot,
 	} from "firebase/firestore";
+	import { db } from "$lib/assets/js/firebase.js";
 
 	import { goto } from "$app/navigation";
 	import { browser } from "$app/environment";
@@ -43,71 +62,98 @@
 	onMount(async () => {
 		if (!browser) return;
 
-		// -----------------------------
-		// 🔐 PROTECCIÓN DE RUTA REAL
-		// -----------------------------
-		const isLoggedIn = sessionStorage.getItem("adminLoggedIn");
-		const user = sessionStorage.getItem("adminUser");
+		console.log("Admin panel mounted");
+
+		// Check both sessionStorage and localStorage for backward compatibility
+		const isLoggedIn =
+			sessionStorage.getItem("adminLoggedIn") ||
+			localStorage.getItem("adminLoggedIn");
+		const user =
+			sessionStorage.getItem("adminUser") ||
+			localStorage.getItem("adminUser");
+
+		console.log("Auth state:", { isLoggedIn, user });
 
 		if (isLoggedIn !== "true" || !user) {
-			goto("/admin-panel-2025", { replaceState: true });
+			console.log("User not authenticated, redirecting to login...");
+			goto("/admin-panel-2025/login", { replaceState: true });
 			return;
 		}
 
-		adminUser = user;
+		try {
+			adminUser = JSON.parse(user); // Try to parse if it's a JSON string
+		} catch (e) {
+			adminUser = user; // Fallback to string if not JSON
+		}
 
-		// -----------------------------
-		// 🔥 BOOTSTRAP CLIENT-SIDE
-		// -----------------------------
-		const bootstrap = await import("bootstrap");
+		console.log("Authenticated user:", adminUser);
 
-		const initOffcanvas = () => {
-			if (productOffcanvasElement && !productOffcanvasInstance) {
-				productOffcanvasInstance = new bootstrap.Offcanvas(
-					productOffcanvasElement,
-				);
-			}
-			if (supplierOffcanvasElement && !supplierOffcanvasInstance) {
-				supplierOffcanvasInstance = new bootstrap.Offcanvas(
-					supplierOffcanvasElement,
-				);
-			}
-		};
+		// Initialize Bootstrap
+		try {
+			const bootstrap = await import("bootstrap");
 
-		if (document.readyState === "complete") initOffcanvas();
-		else window.addEventListener("load", initOffcanvas);
+			// Initialize offcanvas elements
+			const initOffcanvas = () => {
+				if (productOffcanvasElement && !productOffcanvasInstance) {
+					productOffcanvasInstance = new bootstrap.Offcanvas(
+						document.getElementById("productOffcanvas"),
+					);
+				}
+				if (supplierOffcanvasElement && !supplierOffcanvasInstance) {
+					supplierOffcanvasInstance = new bootstrap.Offcanvas(
+						document.getElementById("supplierOffcanvas"),
+					);
+				}
+			};
 
-		// -----------------------------
-		// 🔥 SUSCRIPCIONES A FIRESTORE
-		// -----------------------------
-		unsubscribeProducts = onSnapshot(
-			collection(db, "productos"),
-			(snapshot) => {
-				productos = snapshot.docs.map((doc) => ({
-					id: doc.id,
-					...doc.data(),
-				}));
-				loadingProducts = false;
-			},
-		);
+			if (document.readyState === "complete") initOffcanvas();
+			else window.addEventListener("load", initOffcanvas);
 
-		unsubscribeSuppliers = onSnapshot(
-			collection(db, "proveedores"),
-			(snapshot) => {
-				proveedores = snapshot.docs.map((doc) => ({
-					id: doc.id,
-					...doc.data(),
-				}));
-				loadingSuppliers = false;
-			},
-		);
+			// Load products
+			await loadProducts();
+		} catch (error) {
+			console.error("Error initializing admin panel:", error);
+		}
 
 		// Cleanup
 		return () => {
-			unsubscribeProducts?.();
-			unsubscribeSuppliers?.();
+			if (unsubscribeProducts) unsubscribeProducts();
+			if (unsubscribeSuppliers) unsubscribeSuppliers();
 		};
 	});
+
+	// New function to load products
+	async function loadProducts() {
+		loadingProducts = true;
+		try {
+			// First, get products directly to check connection
+			const querySnapshot = await getDocs(collection(db, "productos"));
+			console.log(
+				"Products from direct query:",
+				querySnapshot.docs.length,
+			);
+
+			// Then set up real-time subscription
+			unsubscribeProducts = onSnapshot(
+				collection(db, "productos"),
+				(snapshot) => {
+					productos = snapshot.docs.map((doc) => ({
+						id: doc.id,
+						...doc.data(),
+					}));
+					console.log("Products updated:", productos.length);
+					loadingProducts = false;
+				},
+				(error) => {
+					console.error("Error in products subscription:", error);
+					loadingProducts = false;
+				},
+			);
+		} catch (error) {
+			console.error("Error loading products:", error);
+			loadingProducts = false;
+		}
+	}
 
 	// -----------------------------
 	// 🔥 CRUD PRODUCTOS
@@ -222,7 +268,7 @@
 					{productos}
 					loading={loadingProducts}
 					openEditProductModal={openProductModal}
-					{handleDeleteProduct}
+					onDelete={handleDeleteProduct}
 				/>
 			{:else}
 				<SuppliersSection
@@ -230,7 +276,7 @@
 					loading={loadingSuppliers}
 					openCreateSupplierModal={() => openSupplierModal()}
 					openEditSupplierModal={openSupplierModal}
-					{handleDeleteSupplier}
+					onDelete={handleDeleteSupplier}
 				/>
 			{/if}
 		</div>
