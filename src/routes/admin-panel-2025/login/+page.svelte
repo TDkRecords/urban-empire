@@ -1,30 +1,33 @@
 <script>
-    import { goto } from "$app/navigation";
-    import { browser } from "$app/environment";
     import { onMount } from "svelte";
-    import { signInWithEmailAndPassword } from "firebase/auth";
-    import { auth } from "$lib/assets/js/firebase";
+    import { browser } from "$app/environment";
+    import { login, isAuthenticated } from "$lib/utils/auth";
 
     let email = "";
     let password = "";
     let error = "";
     let loading = false;
+    let rememberMe = false;
 
-    // Check if already logged in
+    // Redirigir si ya está autenticado
     onMount(() => {
-        if (!browser) return;
-
-        const isLoggedIn =
-            sessionStorage.getItem("adminLoggedIn") ||
-            localStorage.getItem("adminLoggedIn");
-        if (isLoggedIn === "true") {
-            goto("/admin-panel-2025/dashboard", { replaceState: true });
+        if (browser && isAuthenticated()) {
+            window.location.href = "/admin-panel-2025/";
         }
     });
 
-    async function handleLogin() {
-        if (!email || !password) {
-            error = "Por favor ingrese correo y contraseña";
+    async function handleLogin(event) {
+        event.preventDefault();
+        if (!browser || loading) return;
+
+        // Validación básica
+        if (!email) {
+            error = "Por favor ingrese su correo electrónico";
+            return;
+        }
+
+        if (!password) {
+            error = "Por favor ingrese su contraseña";
             return;
         }
 
@@ -32,118 +35,156 @@
         error = "";
 
         try {
-            // Sign in with Firebase Authentication
-            const { user } = await signInWithEmailAndPassword(
-                auth,
-                email,
-                password,
-            );
-
-            // Get the ID token to verify on the server if needed
-            const idToken = await user.getIdToken();
-
-            // Store authentication state
-            const userData = {
-                uid: user.uid,
-                email: user.email,
-                emailVerified: user.emailVerified,
-                isAdmin: true, // You might want to verify this from your database
-            };
-
-            // Store in session storage
-            sessionStorage.setItem("adminLoggedIn", "true");
-            sessionStorage.setItem("adminUser", JSON.stringify(userData));
-
-            // Store in local storage as fallback
-            localStorage.setItem("adminLoggedIn", "true");
-            localStorage.setItem("adminUser", JSON.stringify(userData));
-
-            // Redirect to dashboard
-            goto("/admin-panel-2025/dashboard", { replaceState: true });
+            const { success, error: loginError } = await login(email, password);
+            if (success) {
+                window.location.href = "/admin-panel-2025/";
+            } else {
+                error =
+                    loginError ||
+                    "Error al iniciar sesión. Por favor, intente nuevamente.";
+            }
         } catch (err) {
             console.error("Login error:", err);
-
-            // Handle different Firebase auth errors
-            switch (err.code) {
-                case "auth/user-not-found":
-                case "auth/wrong-password":
-                    error = "Correo o contraseña incorrectos";
-                    break;
-                case "auth/too-many-requests":
-                    error = "Demasiados intentos fallidos. Intente más tarde.";
-                    break;
-                case "auth/user-disabled":
-                    error = "Esta cuenta ha sido deshabilitada";
-                    break;
-                default:
-                    error =
-                        "Error al iniciar sesión. Por favor intente de nuevo.";
-            }
+            error =
+                "Ocurrió un error inesperado. Por favor, intente nuevamente.";
         } finally {
             loading = false;
         }
     }
 </script>
 
-<div class="min-vh-100 d-flex align-items-center bg-light">
-    <div class="container">
+<svelte:head>
+    <title>Iniciar Sesión - Panel Administrativo</title>
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+    />
+</svelte:head>
+
+<div class="min-vh-100 d-flex align-items-center bg-gradient-primary">
+    <div class="container py-5">
         <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-4">
-                <div class="card shadow">
-                    <div class="card-body p-4">
-                        <h2 class="text-center mb-4">Iniciar Sesión</h2>
+            <div class="col-md-8 col-lg-6 col-xl-5">
+                <!-- Logo y Título -->
+                <div class="text-center mb-5">
+                    <div class="mb-3">
+                        <i class="bi bi-shop fs-1 text-white"></i>
+                    </div>
+                    <h1 class="h3 text-white mb-0">Urban Empire</h1>
+                    <p class="h5 text-white mb-4">Panel Administrativo</p>
+                    <p class="text-white-50">
+                        Ingrese sus credenciales para continuar
+                    </p>
+                </div>
+
+                <!-- Tarjeta de Inicio de Sesión -->
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body p-5">
+                        <h2 class="h4 text-center mb-4">Iniciar Sesión</h2>
 
                         {#if error}
-                            <div class="alert alert-danger">{error}</div>
+                            <div
+                                class="alert alert-danger d-flex align-items-center"
+                                role="alert"
+                            >
+                                <i class="bi bi-exclamation-triangle-fill me-2"
+                                ></i>
+                                <div>{error}</div>
+                            </div>
                         {/if}
 
-                        <form on:submit|preventDefault={handleLogin}>
+                        <form on:submit={handleLogin}>
+                            <!-- Campo de Correo -->
                             <div class="mb-3">
                                 <label for="email" class="form-label"
                                     >Correo Electrónico</label
                                 >
-                                <input
-                                    type="email"
-                                    id="email"
-                                    class="form-control"
-                                    bind:value={email}
-                                    required
-                                    disabled={loading}
-                                />
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-envelope"></i>
+                                    </span>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        class="form-control form-control-lg"
+                                        bind:value={email}
+                                        placeholder="tu@correo.com"
+                                        required
+                                        autocomplete="username"
+                                        disabled={loading}
+                                    />
+                                </div>
                             </div>
 
-                            <div class="mb-3">
+                            <!-- Campo de Contraseña -->
+                            <div class="mb-4">
                                 <label for="password" class="form-label"
                                     >Contraseña</label
                                 >
-                                <input
-                                    type="password"
-                                    id="password"
-                                    class="form-control"
-                                    bind:value={password}
-                                    required
-                                    disabled={loading}
-                                />
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-lock"></i>
+                                    </span>
+                                    <input
+                                        type="password"
+                                        id="password"
+                                        class="form-control form-control-lg"
+                                        bind:value={password}
+                                        placeholder="••••••••"
+                                        required
+                                        autocomplete="current-password"
+                                        disabled={loading}
+                                    />
+                                </div>
                             </div>
 
-                            <button
-                                type="submit"
-                                class="btn btn-primary w-100"
-                                disabled={loading}
-                            >
-                                {#if loading}
-                                    <span
-                                        class="spinner-border spinner-border-sm me-2"
-                                        role="status"
-                                        aria-hidden="true"
-                                    ></span>
-                                    Iniciando...
-                                {:else}
-                                    Iniciar Sesión
-                                {/if}
-                            </button>
+                            <!-- Recordar sesión -->
+                            <div class="mb-4 form-check">
+                                <input
+                                    type="checkbox"
+                                    id="rememberMe"
+                                    class="form-check-input"
+                                    bind:checked={rememberMe}
+                                    disabled={loading}
+                                />
+                                <label
+                                    class="form-check-label"
+                                    for="rememberMe"
+                                >
+                                    Recordar mi sesión
+                                </label>
+                            </div>
+
+                            <!-- Botón de Inicio de Sesión -->
+                            <div class="d-grid gap-2 mt-4">
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary btn-lg"
+                                    disabled={loading}
+                                >
+                                    {#if loading}
+                                        <span
+                                            class="spinner-border spinner-border-sm me-2"
+                                            role="status"
+                                            aria-hidden="true"
+                                        ></span>
+                                        Iniciando sesión...
+                                    {:else}
+                                        <i class="bi bi-box-arrow-in-right me-2"
+                                        ></i>Iniciar Sesión
+                                    {/if}
+                                </button>
+                            </div>
                         </form>
                     </div>
+                </div>
+
+                <!-- Copyright -->
+                <div class="text-center mt-4">
+                    <p class="text-white-50 small mb-0">
+                        &copy; {new Date().getFullYear()} Urban Empire. Todos los
+                        derechos reservados.
+                    </p>
                 </div>
             </div>
         </div>
@@ -151,11 +192,41 @@
 </div>
 
 <style>
-    body {
-        background-color: #f8f9fa;
+    :global(html, body) {
+        height: 100%;
+        margin: 0;
+        padding: 0;
     }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
     .card {
-        border: none;
-        border-radius: 10px;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .form-control,
+    .form-select {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+    }
+
+    .btn {
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+
+    .btn-primary:hover {
+        background-color: #2e59d9;
+        border-color: #2653d4;
     }
 </style>

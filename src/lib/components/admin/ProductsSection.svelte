@@ -78,8 +78,11 @@
                 >Buscar productos</label
             >
             <div class="input-group">
+                <label for="searchProduct" class="visually-hidden"
+                    >Buscar productos</label
+                >
                 <span class="input-group-text bg-white border-end-0">
-                    <i class="bi bi-search text-muted"></i>
+                    <i class="bi bi-search text-muted" aria-hidden="true"></i>
                 </span>
                 <input
                     id="searchProduct"
@@ -87,13 +90,22 @@
                     class="form-control border-start-0"
                     placeholder="Nombre o descripción..."
                     bind:value={searchTerm}
+                    aria-label="Buscar productos"
                 />
             </div>
         </div>
 
         <div class="col-md-4">
             <label class="form-label text-muted fw-medium">Categoría</label>
-            <select class="form-select" bind:value={selectedCategory}>
+            <label for="categorySelect" class="visually-hidden"
+                >Seleccionar categoría</label
+            >
+            <select
+                id="categorySelect"
+                class="form-select"
+                bind:value={selectedCategory}
+                aria-label="Seleccionar categoría"
+            >
                 {#each categories as category}
                     <option value={category === "Todas" ? "all" : category}>
                         {category === "Todas"
@@ -109,7 +121,7 @@
                 class="btn btn-primary w-100 d-flex align-items-center justify-content-center"
                 on:click={() => openEditProductModal()}
             >
-                <i class="bi bi-plus-lg me-2"></i> Nuevo
+                <i class="bi bi-plus-lg me-2" aria-hidden="true"></i> Nuevo
             </button>
         </div>
     </div>
@@ -144,6 +156,10 @@
                 <div
                     class="card h-100 shadow-sm border-0 position-relative producto-card"
                     on:click={() => toggleMenu(producto.id)}
+                    on:keydown={(e) =>
+                        e.key === "Enter" && toggleMenu(producto.id)}
+                    role="button"
+                    tabindex="0"
                 >
                     <!-- IMAGEN -->
                     <div class="ratio ratio-16x9 bg-light">
@@ -176,15 +192,23 @@
                                     class="btn btn-sm btn-warning"
                                     on:click|stopPropagation={() =>
                                         openEditProductModal(producto)}
+                                    aria-label={`Editar ${producto.nombre}`}
                                 >
-                                    <i class="fa-solid fa-pen"></i>
+                                    <i
+                                        class="fa-solid fa-pen"
+                                        aria-hidden="true"
+                                    ></i>
                                 </button>
                                 <button
                                     class="btn btn-sm btn-danger"
                                     on:click|stopPropagation={() =>
                                         handleDeleteProduct(producto)}
+                                    aria-label={`Eliminar ${producto.nombre}`}
                                 >
-                                    <i class="fa-solid fa-trash"></i>
+                                    <i
+                                        class="fa-solid fa-trash"
+                                        aria-hidden="true"
+                                    ></i>
                                 </button>
                             </div>
                         {/if}
