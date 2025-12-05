@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { browser } from "$app/environment";
     import { goto } from "$app/navigation";
     import { getCurrentUser, isAuthenticated } from "$lib/utils/auth";
@@ -7,42 +7,141 @@
         collection,
         getDocs,
         addDoc,
+        updateDoc,
+        deleteDoc,
+        doc,
         query,
         orderBy,
-        limit,
-        startAfter,
-        where,
+        onSnapshot,
         serverTimestamp,
     } from "firebase/firestore";
     import { db } from "$lib/assets/js/firebase";
+    import { fade, fly } from "svelte/transition";
 
     // Estado
     let proveedores = [];
     let loading = true;
     let error = null;
-    const itemsPerPage = 10;
-    let currentPage = 1;
-    let lastVisible = null;
-    let hasNextPage = false;
-    let totalProveedores = 0;
-    let unsubscribe = null; // Para manejar la suscripción
+    let searchTerm = "";
+    let unsubscribe = null;
 
-    // Estado del modal y formulario
-    let showNewProviderModal = false;
+    // Modal y formulario
+    let showModal = false;
+    let editingProveedor = null;
     let formSubmitting = false;
-    let newProvider = {
+    let formData = {
         nombre: "",
         email: "",
         telefono: "",
         direccion: "",
+        contacto: "",
         activo: true,
-        fechaCreacion: null,
     };
 
-    // Función para manejar el envío del formulario
+    // Proveedores filtrados
+    $: proveedoresFiltrados = proveedores.filter((p) => {
+        const search = searchTerm.toLowerCase();
+        return (
+            p.nombre?.toLowerCase().includes(search) ||
+            p.email?.toLowerCase().includes(search) ||
+            p.telefono?.toLowerCase().includes(search) ||
+            p.contacto?.toLowerCase().includes(search)
+        );
+    });
+
+    // Verificar autenticación
+    function checkAuth() {
+        if (!browser) return false;
+        if (!isAuthenticated()) {
+            goto("/admin-panel-2025/login");
+            return false;
+        }
+        return true;
+    }
+
+    // Cargar proveedores con onSnapshot (tiempo real)
+    function loadSuppliers() {
+        if (!browser || !checkAuth()) return;
+
+        loading = true;
+        error = null;
+
+        try {
+            const q = query(
+                collection(db, "proveedores"),
+                orderBy("nombre", "asc"),
+            );
+
+            // Suscribirse a cambios en tiempo real
+            unsubscribe = onSnapshot(
+                q,
+                (snapshot) => {
+                    proveedores = snapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    }));
+                    loading = false;
+                    console.log("Proveedores cargados:", proveedores.length);
+                },
+                (err) => {
+                    console.error("Error al cargar proveedores:", err);
+                    error = "Error al cargar los proveedores";
+                    loading = false;
+                },
+            );
+        } catch (err) {
+            console.error("Error al configurar listener:", err);
+            error = "Error al configurar la conexión con la base de datos";
+            loading = false;
+        }
+    }
+
+    // Abrir modal para crear
+    function openCreateModal() {
+        editingProveedor = null;
+        formData = {
+            nombre: "",
+            email: "",
+            telefono: "",
+            direccion: "",
+            contacto: "",
+            activo: true,
+        };
+        showModal = true;
+    }
+
+    // Abrir modal para editar
+    function openEditModal(proveedor) {
+        editingProveedor = proveedor;
+        formData = {
+            nombre: proveedor.nombre || "",
+            email: proveedor.email || "",
+            telefono: proveedor.telefono || "",
+            direccion: proveedor.direccion || "",
+            contacto: proveedor.contacto || "",
+            activo: proveedor.activo !== undefined ? proveedor.activo : true,
+        };
+        showModal = true;
+    }
+
+    // Cerrar modal
+    function closeModal() {
+        showModal = false;
+        editingProveedor = null;
+        formData = {
+            nombre: "",
+            email: "",
+            telefono: "",
+            direccion: "",
+            contacto: "",
+            activo: true,
+        };
+    }
+
+    // Guardar proveedor
     async function handleSubmit() {
-        if (!newProvider.nombre.trim()) {
-            error = "El nombre del proveedor es obligatorio";
+        if (!formData.nombre.trim()) {
+            alert("El nombre del proveedor es obligatorio");
             return;
         }
 
@@ -50,253 +149,80 @@
         error = null;
 
         try {
-            // Agregar la fecha de creación
             const providerData = {
-                ...newProvider,
-                fechaCreacion: serverTimestamp(),
+                ...formData,
                 fechaActualizacion: serverTimestamp(),
             };
 
-            // Guardar en Firestore
-            const docRef = await addDoc(
-                collection(db, "proveedores"),
-                providerData,
-            );
+            if (editingProveedor) {
+                // Actualizar proveedor existente
+                await updateDoc(
+                    doc(db, "proveedores", editingProveedor.id),
+                    providerData,
+                );
+                alert("Proveedor actualizado exitosamente");
+            } else {
+                // Crear nuevo proveedor
+                providerData.fechaCreacion = serverTimestamp();
+                await addDoc(collection(db, "proveedores"), providerData);
+                alert("Proveedor creado exitosamente");
+            }
 
-            // Cerrar el modal y resetear el formulario
-            showNewProviderModal = false;
-            newProvider = {
-                nombre: "",
-                email: "",
-                telefono: "",
-                direccion: "",
-                activo: true,
-                fechaCreacion: null,
-            };
-
-            // Recargar la lista de proveedores
-            await loadSuppliers(currentPage);
+            closeModal();
         } catch (err) {
-            console.error("Error al guardar el proveedor:", err);
-            error =
-                "Error al guardar el proveedor. Por favor, intente nuevamente.";
+            console.error("Error al guardar proveedor:", err);
+            error = "Error al guardar el proveedor";
+            alert("Error al guardar el proveedor. Intente nuevamente.");
         } finally {
             formSubmitting = false;
         }
     }
 
-    // Verificar autenticación
-    function checkAuth() {
-        if (!browser) return false;
-
-        if (!isAuthenticated()) {
-            window.location.href = "/admin-panel-2025/login";
-            return false;
+    // Eliminar proveedor
+    async function handleDelete(proveedor) {
+        if (
+            !confirm(
+                `¿Está seguro de eliminar el proveedor "${proveedor.nombre}"?`,
+            )
+        ) {
+            return;
         }
-        return true;
+
+        try {
+            await deleteDoc(doc(db, "proveedores", proveedor.id));
+            alert("Proveedor eliminado exitosamente");
+        } catch (err) {
+            console.error("Error al eliminar proveedor:", err);
+            alert("Error al eliminar el proveedor");
+        }
     }
 
-    // Cargar proveedores
-    async function loadSuppliers(page = 1) {
-        console.log("Cargando proveedores, página:", page);
-        if (!browser) {
-            console.log("No estamos en el navegador");
-            return;
+    // Alternar estado activo/inactivo
+    async function toggleStatus(proveedor) {
+        try {
+            await updateDoc(doc(db, "proveedores", proveedor.id), {
+                activo: !proveedor.activo,
+                fechaActualizacion: serverTimestamp(),
+            });
+        } catch (err) {
+            console.error("Error al cambiar estado:", err);
+            alert("Error al cambiar el estado del proveedor");
         }
+    }
 
-        // Verificar autenticación
-        if (!isAuthenticated()) {
-            console.log("Usuario no autenticado, redirigiendo...");
-            window.location.href = "/admin-panel-2025/login";
-            return;
+    // Lifecycle
+    onMount(() => {
+        if (!browser) return;
+        if (checkAuth()) {
+            loadSuppliers();
         }
+    });
 
-        // Cancelar suscripción anterior si existe
+    onDestroy(() => {
         if (unsubscribe) {
             unsubscribe();
         }
-
-        try {
-            loading = true;
-            error = null;
-            console.log("Iniciando carga de proveedores...");
-
-            const suppliersRef = collection(db, "proveedores");
-            console.log("Referencia a la colección creada");
-
-            // Consulta para la paginación
-            let q = query(
-                suppliersRef,
-                orderBy("nombre"),
-                limit(itemsPerPage + 1),
-            );
-
-            // Si no es la primera página, usar startAfter para paginación
-            if (page > 1) {
-                // Si no tenemos lastVisible, necesitamos cargar la página anterior
-                if (!lastVisible) {
-                    const prevPageQuery = query(
-                        suppliersRef,
-                        orderBy("nombre"),
-                        limit((page - 1) * itemsPerPage),
-                    );
-                    const prevSnapshot = await getDocs(prevPageQuery);
-                    const prevDocs = prevSnapshot.docs;
-                    lastVisible = prevDocs[prevDocs.length - 1];
-                }
-
-                if (lastVisible) {
-                    console.log(
-                        "Cargando página",
-                        page,
-                        "con lastVisible:",
-                        lastVisible.id,
-                    );
-                    q = query(
-                        suppliersRef,
-                        orderBy("nombre"),
-                        startAfter(lastVisible),
-                        limit(itemsPerPage + 1),
-                    );
-                }
-            }
-
-            // Obtener total de proveedores
-            const countQuery = query(suppliersRef);
-            const countSnapshot = await getDocs(countQuery);
-            totalProveedores = countSnapshot.size;
-            console.log("Total de proveedores:", totalProveedores);
-
-            const snapshot = await getDocs(q);
-            console.log("Documentos obtenidos:", snapshot.docs.length);
-
-            // Verificar si hay documentos
-            if (snapshot.empty) {
-                console.log("No se encontraron documentos");
-                proveedores = [];
-                hasNextPage = false;
-                return;
-            }
-
-            const docs = snapshot.docs;
-            hasNextPage = docs.length > itemsPerPage;
-            console.log("¿Hay más páginas?", hasNextPage);
-
-            // Si hay más documentos de los que mostramos, quitamos el último
-            const docsToShow = hasNextPage ? docs.slice(0, -1) : docs;
-            console.log("Documentos a mostrar:", docsToShow.length);
-
-            // Actualizar lastVisible para la próxima página
-            if (docsToShow.length > 0) {
-                lastVisible = docsToShow[docsToShow.length - 1];
-                console.log("Nuevo lastVisible:", lastVisible.id);
-            }
-
-            // Mapear documentos
-            const proveedoresCargados = docsToShow.map((doc) => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    nombre: data.nombre?.trim() || "Sin nombre",
-                    email: data.email?.trim() || "No especificado",
-                    telefono: data.telefono?.trim() || "No especificado",
-                    direccion: data.direccion?.trim() || "No especificada",
-                    activo: data.activo !== undefined ? data.activo : true,
-                    fechaCreacion:
-                        data.fechaCreacion?.toDate?.() || data.fechaCreacion,
-                    fechaActualizacion:
-                        data.fechaActualizacion?.toDate?.() ||
-                        data.fechaActualizacion,
-                };
-            });
-
-            proveedores = proveedoresCargados;
-            console.log("Proveedores actualizados:", proveedores);
-
-            // Actualizar la URL usando la API de SvelteKit
-            const url = new URL(window.location);
-            if (page > 1) {
-                url.searchParams.set("page", page);
-            } else {
-                url.searchParams.delete("page");
-            }
-            // Usar goto de SvelteKit en lugar de pushState directamente
-            goto(url.toString(), {
-                replaceState: true,
-                keepFocus: true,
-                noScroll: true,
-            });
-        } catch (err) {
-            console.error("Error al cargar proveedores:", err);
-            error =
-                "Error al cargar los proveedores. Por favor, intente de nuevo más tarde.";
-            proveedores = [];
-        } finally {
-            loading = false;
-        }
-    }
-
-    // Navegación de páginas
-    function goToPage(page) {
-        if (page < 1 || page === currentPage) return;
-        currentPage = page;
-        loadSuppliers(page);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    // Inicializar
-    onMount(async () => {
-        if (!browser) return;
-
-        // Verificar autenticación
-        if (!checkAuth()) {
-            window.location.href = "/admin-panel-2025/login";
-            return;
-        }
-
-        // Cargar la página actual de la URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const page = parseInt(urlParams.get("page") || "1");
-        currentPage = page;
-
-        // Cargar proveedores
-        await loadSuppliers(page);
-
-        // Manejar el evento de popstate para navegación con el botón atrás/adelante
-        const handlePopState = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const newPage = parseInt(urlParams.get("page") || "1");
-            if (newPage !== currentPage) {
-                currentPage = newPage;
-                loadSuppliers(newPage);
-            }
-        };
-
-        window.addEventListener("popstate", handlePopState);
-
-        // Limpiar el event listener al desmontar el componente
-        return () => {
-            window.removeEventListener("popstate", handlePopState);
-            if (unsubscribe) {
-                unsubscribe();
-            }
-        };
     });
-
-    // Función para formatear fecha
-    function formatDate(dateString) {
-        if (!dateString) return "No especificada";
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString("es-ES", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-            });
-        } catch (e) {
-            return dateString;
-        }
-    }
 </script>
 
 <svelte:head>
@@ -309,38 +235,65 @@
 
 <div class="min-vh-100 bg-light">
     <div class="container py-4">
-        <!-- Header con botones de navegación -->
+        <!-- Header -->
         <div
             class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3"
         >
             <div>
-                <a
-                    href="/admin-panel-2025"
-                    class="btn btn-outline-secondary btn-sm mb-2 mb-md-0"
-                >
-                    <i class="bi bi-arrow-left me-1"></i> Volver al Dashboard
-                </a>
-                <h1 class="h3 mb-0 mt-2">Gestión de Proveedores</h1>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <a
+                        href="/admin-panel-2025"
+                        class="btn btn-outline-secondary btn-sm"
+                    >
+                        <i class="bi bi-arrow-left me-1"></i> Dashboard
+                    </a>
+                </div>
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-people-fill me-2"></i>
+                    Gestión de Proveedores
+                </h1>
                 {#if !loading}
                     <p class="text-muted mb-0 mt-1">
-                        Mostrando {proveedores.length} de {totalProveedores} proveedores
+                        {proveedores.length}
+                        {proveedores.length === 1 ? "proveedor" : "proveedores"}
+                        registrados
                     </p>
                 {/if}
             </div>
             <div class="d-flex gap-2">
                 <button
                     class="btn btn-outline-secondary"
-                    on:click={() => loadSuppliers(currentPage)}
+                    on:click={loadSuppliers}
                     disabled={loading}
+                    title="Recargar"
+                    aria-label="Recargar"
                 >
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
                 <button
                     class="btn btn-primary"
-                    on:click={() => (showNewProviderModal = true)}
+                    on:click={openCreateModal}
+                    aria-label="Nuevo Proveedor"
                 >
                     <i class="bi bi-plus-lg me-1"></i> Nuevo Proveedor
                 </button>
+            </div>
+        </div>
+
+        <!-- Buscador -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input
+                        type="text"
+                        class="form-control border-start-0"
+                        placeholder="Buscar por nombre, email, teléfono o contacto..."
+                        bind:value={searchTerm}
+                    />
+                </div>
             </div>
         </div>
 
@@ -349,369 +302,498 @@
             <div
                 class="alert alert-danger d-flex align-items-center"
                 role="alert"
+                in:fade
             >
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
                 <div>{error}</div>
             </div>
         {/if}
 
-        <!-- Estado de carga -->
+        <!-- Loading -->
         {#if loading}
-            <div class="text-center my-5 py-5">
+            <div class="text-center py-5" in:fade>
                 <div
                     class="spinner-border text-primary"
-                    role="status"
                     style="width: 3rem; height: 3rem;"
                 >
                     <span class="visually-hidden">Cargando...</span>
                 </div>
                 <p class="mt-3 text-muted">Cargando proveedores...</p>
-                <div
-                    class="progress mt-3"
-                    style="height: 4px; max-width: 200px; margin: 0 auto;"
-                >
-                    <div
-                        class="progress-bar progress-bar-striped progress-bar-animated w-100"
-                    ></div>
+            </div>
+
+            <!-- Sin proveedores -->
+        {:else if proveedores.length === 0}
+            <div class="card shadow-sm" in:fade>
+                <div class="card-body text-center py-5">
+                    <i
+                        class="bi bi-people text-muted"
+                        style="font-size: 4rem; opacity: 0.5;"
+                    ></i>
+                    <h3 class="h4 mt-4">No hay proveedores registrados</h3>
+                    <p class="text-muted mb-4">
+                        Comienza agregando tu primer proveedor
+                    </p>
+                    <button class="btn btn-primary" on:click={openCreateModal}>
+                        <i class="bi bi-plus-lg me-1"></i> Agregar Proveedor
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sin resultados de búsqueda -->
+        {:else if proveedoresFiltrados.length === 0}
+            <div class="card shadow-sm" in:fade>
+                <div class="card-body text-center py-5">
+                    <i
+                        class="bi bi-search text-muted"
+                        style="font-size: 4rem; opacity: 0.5;"
+                    ></i>
+                    <h3 class="h4 mt-4">No se encontraron resultados</h3>
+                    <p class="text-muted">
+                        Intenta con otros términos de búsqueda
+                    </p>
                 </div>
             </div>
 
             <!-- Tabla de proveedores -->
-            {#if proveedores.length > 0}
-                <div class="card shadow-sm mb-4">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Email</th>
-                                    <th>Teléfono</th>
-                                    <th>Dirección</th>
-                                    <th>Estado</th>
-                                    <th class="text-end">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {#each proveedores as proveedor}
-                                    <tr>
-                                        <td class="align-middle">
-                                            <div
-                                                class="d-flex align-items-center"
-                                            >
-                                                <div>
-                                                    <div class="fw-semibold">
-                                                        {proveedor.nombre}
-                                                    </div>
-                                                    <div
-                                                        class="text-muted small"
-                                                    >
-                                                        ID: {proveedor.id}
-                                                    </div>
-                                                </div>
+        {:else}
+            <div class="card shadow-sm" in:fade>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Proveedor</th>
+                                <th>Contacto</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Estado</th>
+                                <th class="text-end pe-3">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each proveedoresFiltrados as proveedor (proveedor.id)}
+                                <tr in:fly={{ y: 20, duration: 300 }}>
+                                    <td class="ps-3">
+                                        <div
+                                            class="d-flex align-items-center gap-2"
+                                        >
+                                            <div class="avatar-circle">
+                                                <i class="bi bi-building"></i>
                                             </div>
-                                        </td>
-                                        <td class="align-middle">
+                                            <div>
+                                                <div class="fw-semibold">
+                                                    {proveedor.nombre}
+                                                </div>
+                                                {#if proveedor.direccion}
+                                                    <small class="text-muted"
+                                                        >{proveedor.direccion}</small
+                                                    >
+                                                {/if}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td
+                                        >{proveedor.contacto ||
+                                            "No especificado"}</td
+                                    >
+                                    <td>
+                                        {#if proveedor.email}
                                             <a
                                                 href="mailto:{proveedor.email}"
                                                 class="text-decoration-none"
                                             >
                                                 {proveedor.email}
                                             </a>
-                                        </td>
-                                        <td class="align-middle"
-                                            >{proveedor.telefono}</td
-                                        >
-                                        <td class="align-middle"
-                                            >{proveedor.direccion}</td
-                                        >
-                                        <td class="align-middle">
-                                            <span
-                                                class="badge bg-{proveedor.activo
-                                                    ? 'success'
-                                                    : 'secondary'}"
+                                        {:else}
+                                            <span class="text-muted"
+                                                >No especificado</span
                                             >
-                                                {proveedor.activo
-                                                    ? "Activo"
-                                                    : "Inactivo"}
-                                            </span>
-                                        </td>
-                                        <td class="text-end align-middle">
-                                            <div class="btn-group btn-group-sm">
-                                                <a
-                                                    href="/admin-panel-2025/proveedores/editar/{proveedor.id}"
-                                                    class="btn btn-outline-primary"
-                                                >
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                                <button
-                                                    class="btn btn-outline-danger"
-                                                    on:click|preventDefault={() =>
-                                                        toggleStatus(proveedor)}
-                                                    title={proveedor.activo
-                                                        ? "Desactivar"
-                                                        : "Activar"}
-                                                >
-                                                    <i
-                                                        class="bi bi-{proveedor.activo
-                                                            ? 'x-circle'
-                                                            : 'check-circle'}"
-                                                    ></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {/each}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            {:else}
-                <div class="text-center my-5 py-5 bg-white rounded-3 shadow-sm">
-                    <div class="py-4">
-                        <i
-                            class="bi bi-people text-muted"
-                            style="font-size: 4rem; opacity: 0.5;"
-                        ></i>
-                        <h3 class="h4 mt-4">No hay proveedores registrados</h3>
-                        <p class="text-muted mb-4">
-                            Comienza agregando tu primer proveedor
-                        </p>
-                        <a
-                            href="/admin-panel-2025/proveedores/nuevo"
-                            class="btn btn-primary"
-                        >
-                            <i class="bi bi-plus-lg me-1"></i> Agregar Proveedor
-                        </a>
-                    </div>
-                </div>
-            {/if}
-
-            <!-- Paginación -->
-            {#if proveedores.length > 0}
-                <div
-                    class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4"
-                >
-                    <div class="text-muted small mb-3 mb-md-0">
-                        Mostrando {itemsPerPage * (currentPage - 1) + 1} a {Math.min(
-                            itemsPerPage * currentPage,
-                            totalProveedores,
-                        )} de {totalProveedores} proveedores
-                    </div>
-                    <nav aria-label="Navegación de proveedores">
-                        <ul class="pagination mb-0">
-                            <li
-                                class="page-item {currentPage === 1
-                                    ? 'disabled'
-                                    : ''}"
-                            >
-                                <a
-                                    class="page-link"
-                                    href="#"
-                                    on:click|preventDefault={() =>
-                                        goToPage(currentPage - 1)}
-                                    aria-label="Anterior"
-                                >
-                                    <span aria-hidden="true">&laquo;</span>
-                                </a>
-                            </li>
-
-                            {#if currentPage > 3}
-                                <li class="page-item">
-                                    <a
-                                        class="page-link"
-                                        href="#"
-                                        on:click|preventDefault={() =>
-                                            goToPage(1)}>1</a
-                                    >
-                                </li>
-                                {#if currentPage > 4}
-                                    <li class="page-item disabled">
-                                        <span class="page-link">...</span>
-                                    </li>
-                                {/if}
-                            {/if}
-
-                            {#each Array(Math.min(3, Math.ceil(totalProveedores / itemsPerPage))) as _, i}
-                                {#if (i + 1 >= currentPage - 1 && i + 1 <= currentPage + 1) || (currentPage === 1 && i < 3) || (currentPage === Math.ceil(totalProveedores / itemsPerPage) && i >= Math.ceil(totalProveedores / itemsPerPage) - 3)}
-                                    <li
-                                        class="page-item {i + 1 === currentPage
-                                            ? 'active'
-                                            : ''}"
-                                    >
-                                        <a
-                                            class="page-link"
-                                            href="#"
-                                            on:click|preventDefault={() =>
-                                                goToPage(i + 1)}
+                                        {/if}
+                                    </td>
+                                    <td>
+                                        {#if proveedor.telefono}
+                                            <a
+                                                href="tel:{proveedor.telefono}"
+                                                class="text-decoration-none"
+                                            >
+                                                {proveedor.telefono}
+                                            </a>
+                                        {:else}
+                                            <span class="text-muted"
+                                                >No especificado</span
+                                            >
+                                        {/if}
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="badge bg-{proveedor.activo
+                                                ? 'success'
+                                                : 'secondary'}"
                                         >
-                                            {i + 1}
-                                        </a>
-                                    </li>
-                                {/if}
+                                            {proveedor.activo
+                                                ? "Activo"
+                                                : "Inactivo"}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="btn-group btn-group-sm">
+                                            <button
+                                                aria-label="Editar"
+                                                class="btn btn-outline-primary"
+                                                on:click={() =>
+                                                    openEditModal(proveedor)}
+                                                title="Editar"
+                                            >
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button
+                                                aria-label="Activar/Desactivar"
+                                                class="btn btn-outline-{proveedor.activo
+                                                    ? 'warning'
+                                                    : 'success'}"
+                                                on:click={() =>
+                                                    toggleStatus(proveedor)}
+                                                title={proveedor.activo
+                                                    ? "Desactivar"
+                                                    : "Activar"}
+                                            >
+                                                <i
+                                                    class="bi bi-{proveedor.activo
+                                                        ? 'pause'
+                                                        : 'play'}-circle"
+                                                ></i>
+                                            </button>
+                                            <button
+                                                aria-label="Eliminar"
+                                                class="btn btn-outline-danger"
+                                                on:click={() =>
+                                                    handleDelete(proveedor)}
+                                                title="Eliminar"
+                                            >
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
                             {/each}
-
-                            {#if currentPage < Math.ceil(totalProveedores / itemsPerPage) - 2}
-                                {#if currentPage < Math.ceil(totalProveedores / itemsPerPage) - 3}
-                                    <li class="page-item disabled">
-                                        <span class="page-link">...</span>
-                                    </li>
-                                {/if}
-                                <li class="page-item">
-                                    <a
-                                        class="page-link"
-                                        href="#"
-                                        on:click|preventDefault={() =>
-                                            goToPage(
-                                                Math.ceil(
-                                                    totalProveedores /
-                                                        itemsPerPage,
-                                                ),
-                                            )}
-                                    >
-                                        {Math.ceil(
-                                            totalProveedores / itemsPerPage,
-                                        )}
-                                    </a>
-                                </li>
-                            {/if}
-
-                            <li
-                                class="page-item {!hasNextPage
-                                    ? 'disabled'
-                                    : ''}"
-                            >
-                                <a
-                                    class="page-link"
-                                    href="#"
-                                    on:click|preventDefault={() =>
-                                        goToPage(currentPage + 1)}
-                                    aria-label="Siguiente"
-                                >
-                                    <span aria-hidden="true">&raquo;</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
+                        </tbody>
+                    </table>
                 </div>
-            {/if}
+            </div>
+
+            <div class="mt-3 text-muted small">
+                Mostrando {proveedoresFiltrados.length} de {proveedores.length} proveedores
+            </div>
         {/if}
     </div>
 </div>
 
-<!-- Modal Nuevo Proveedor -->
-{#if showNewProviderModal}
-    <div
-        class="modal fade show"
-        tabindex="-1"
-        style="display: block;"
-        role="dialog"
-        aria-modal="true"
-    >
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Nuevo Proveedor</h5>
+<!-- Modal -->
+{#if showModal}
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" in:fade>
+        <div
+            class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+        >
+            <div class="modal-content" in:fly={{ y: -50, duration: 300 }}>
+                <div class="modal-header bg-gradient-success text-white">
+                    <h5 class="modal-title">
+                        <i
+                            class="bi bi-{editingProveedor
+                                ? 'pencil'
+                                : 'plus-circle'} me-2"
+                        ></i>
+                        {editingProveedor
+                            ? "Editar Proveedor"
+                            : "Nuevo Proveedor"}
+                    </h5>
                     <button
                         type="button"
                         class="btn-close btn-close-white"
-                        on:click|preventDefault={() =>
-                            (showNewProviderModal = false)}
+                        on:click={closeModal}
+                        aria-label="Cerrar"
                     ></button>
                 </div>
-                <div class="modal-body">
-                    <form on:submit|preventDefault={handleSubmit}>
+                <form on:submit|preventDefault={handleSubmit}>
+                    <div class="modal-body">
+                        <div
+                            class="alert alert-info d-flex align-items-center mb-4"
+                        >
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <small
+                                >Los campos marcados con * son obligatorios</small
+                            >
+                        </div>
+
                         <div class="row g-3">
+                            <!-- Nombre -->
                             <div class="col-md-6">
-                                <label for="nombre" class="form-label"
-                                    >Nombre del Proveedor *</label
+                                <label
+                                    for="nombre"
+                                    class="form-label fw-semibold"
                                 >
+                                    <i class="bi bi-building me-1"></i>
+                                    Nombre del Proveedor *
+                                </label>
                                 <input
                                     type="text"
                                     class="form-control"
                                     id="nombre"
-                                    bind:value={newProvider.nombre}
+                                    bind:value={formData.nombre}
+                                    placeholder="Ej: Textiles del Valle"
                                     required
                                 />
                             </div>
+
+                            <!-- Persona de Contacto -->
                             <div class="col-md-6">
-                                <label for="email" class="form-label"
-                                    >Email</label
+                                <label
+                                    for="contacto"
+                                    class="form-label fw-semibold"
                                 >
+                                    <i class="bi bi-person me-1"></i>
+                                    Persona de Contacto
+                                </label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="contacto"
+                                    bind:value={formData.contacto}
+                                    placeholder="Ej: Juan Pérez"
+                                />
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <label
+                                    for="email"
+                                    class="form-label fw-semibold"
+                                >
+                                    <i class="bi bi-envelope me-1"></i>
+                                    Email
+                                </label>
                                 <input
                                     type="email"
                                     class="form-control"
                                     id="email"
-                                    bind:value={newProvider.email}
+                                    bind:value={formData.email}
+                                    placeholder="ejemplo@email.com"
                                 />
                             </div>
+
+                            <!-- Teléfono -->
                             <div class="col-md-6">
-                                <label for="telefono" class="form-label"
-                                    >Teléfono</label
+                                <label
+                                    for="telefono"
+                                    class="form-label fw-semibold"
                                 >
+                                    <i class="bi bi-telephone me-1"></i>
+                                    Teléfono
+                                </label>
                                 <input
                                     type="tel"
                                     class="form-control"
                                     id="telefono"
-                                    bind:value={newProvider.telefono}
+                                    bind:value={formData.telefono}
+                                    placeholder="+57 300 123 4567"
                                 />
                             </div>
+
+                            <!-- Dirección -->
                             <div class="col-12">
-                                <label for="direccion" class="form-label"
-                                    >Dirección</label
+                                <label
+                                    for="direccion"
+                                    class="form-label fw-semibold"
                                 >
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    Dirección
+                                </label>
                                 <textarea
                                     class="form-control"
                                     id="direccion"
-                                    rows="2"
-                                    bind:value={newProvider.direccion}
+                                    rows="3"
+                                    bind:value={formData.direccion}
+                                    placeholder="Dirección completa del proveedor..."
                                 ></textarea>
                             </div>
+
+                            <!-- Estado -->
                             <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input
-                                        class="form-check-input"
-                                        type="checkbox"
-                                        id="activo"
-                                        bind:checked={newProvider.activo}
-                                    />
-                                    <label class="form-check-label" for="activo"
-                                        >Proveedor activo</label
-                                    >
+                                <div class="card bg-light">
+                                    <div class="card-body py-3">
+                                        <div class="form-check form-switch">
+                                            <input
+                                                class="form-check-input"
+                                                type="checkbox"
+                                                role="switch"
+                                                id="activo"
+                                                bind:checked={formData.activo}
+                                            />
+                                            <label
+                                                class="form-check-label fw-semibold"
+                                                for="activo"
+                                            >
+                                                <i
+                                                    class="bi bi-{formData.activo
+                                                        ? 'check-circle-fill text-success'
+                                                        : 'x-circle-fill text-secondary'} me-1"
+                                                ></i>
+                                                Proveedor {formData.activo
+                                                    ? "activo"
+                                                    : "inactivo"}
+                                            </label>
+                                            <div class="form-text">
+                                                {formData.activo
+                                                    ? "Este proveedor aparecerá en las listas activas"
+                                                    : "Este proveedor estará inactivo y no aparecerá en las búsquedas"}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        on:click={() => (showNewProviderModal = false)}
-                    >
-                        <i class="bi bi-x-lg me-1"></i> Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        on:click={handleSubmit}
-                        disabled={formSubmitting}
-                    >
-                        {#if formSubmitting}
-                            <span
-                                class="spinner-border spinner-border-sm me-1"
-                                role="status"
-                                aria-hidden="true"
-                            ></span>
-                            Guardando...
-                        {:else}
-                            <i class="bi bi-save me-1"></i> Guardar
-                        {/if}
-                    </button>
-                </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            on:click={closeModal}
+                        >
+                            <i class="bi bi-x-lg me-1"></i> Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            class="btn btn-success"
+                            disabled={formSubmitting}
+                        >
+                            {#if formSubmitting}
+                                <span
+                                    class="spinner-border spinner-border-sm me-1"
+                                ></span>
+                                Guardando...
+                            {:else}
+                                <i class="bi bi-save me-1"></i>
+                                {editingProveedor
+                                    ? "Actualizar Proveedor"
+                                    : "Guardar Proveedor"}
+                            {/if}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-        <div class="modal-backdrop fade show"></div>
     </div>
+    <div class="modal-backdrop fade show"></div>
 {/if}
 
-<!-- Estilos eliminados temporalmente para depuración -->
+<style>
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+    }
+
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-group-sm > .btn {
+        padding: 0.25rem 0.5rem;
+    }
+
+    .modal.show {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+
+    .modal-header.bg-gradient-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #dee2e6;
+        padding: 1rem 1.5rem;
+    }
+
+    .form-label {
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+
+    .form-label i {
+        opacity: 0.7;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        padding: 0.625rem 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+        border-color: #4facfe;
+        box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+    }
+
+    .form-check-input {
+        width: 3rem;
+        height: 1.5rem;
+        cursor: pointer;
+    }
+
+    .form-check-input:checked {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .btn {
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .alert-info {
+        background-color: #e7f3ff;
+        border-color: #b3d9ff;
+        color: #004085;
+        border-radius: 8px;
+    }
+</style>
