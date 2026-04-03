@@ -2,6 +2,25 @@
     import Navbar from "../components/Navbar.svelte";
     import Footer from "../components/Footer.svelte";
     import CartButton from "$lib/components/CartButton.svelte";
+    import "alertifyjs/build/css/alertify.css";
+    import "alertifyjs/build/css/themes/bootstrap.css";
+    import { onMount } from "svelte";
+    import { browser } from "$app/environment";
+
+    onMount(() => {
+        if (browser) {
+            import("alertifyjs").then((alertify) => {
+                window.alertify = alertify.default;
+                window.alertify.defaults.glossary.title = "Urban Empire";
+                window.alertify.defaults.theme.ok = "btn btn-primary";
+                window.alertify.defaults.theme.cancel = "btn btn-secondary";
+                window.alertify.defaults.theme.input = "form-control";
+                window.alertify.defaults.transition = "slide";
+                window.alertify.defaults.glossary.ok = "Aceptar";
+                window.alertify.defaults.glossary.cancel = "Cancelar";
+            });
+        }
+    });
 </script>
 
 <div class="app-wrapper">

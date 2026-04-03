@@ -13,24 +13,32 @@
         query,
         orderBy,
         onSnapshot,
+        setDoc,
         serverTimestamp,
     } from "firebase/firestore";
     import { db } from "$lib/assets/js/firebase";
     import { fade, fly, scale } from "svelte/transition";
+    import {
+        success as notifySuccess,
+        error as notifyError,
+        confirm as notifyConfirm,
+    } from "$lib/utils/notify";
 
     // Componentes
-    import ProductSearchFilter from "$lib/components/admin/products/ProductSearchFilter.svelte";
-    import ProductGrid from "$lib/components/admin/products/ProductGrid.svelte";
-    import ProductFormModal from "$lib/components/admin/products/ProductFormModal.svelte";
+    import ProductSearchFilter from "./modules/ProductSearchFilter.svelte";
+    import ProductGrid from "./modules/ProductGrid.svelte";
+    import ProductFormModal from "./modules/ProductFormModal.svelte";
 
     // Estado
     let productos = [];
+    let deletedProducts = [];
     let loading = true;
     let error = null;
     let searchTerm = "";
     let selectedCategory = "all";
     let categories = [];
     let unsubscribe = null;
+    let unsubscribeDeleted = null;
     let unsubscribeAuth = null;
 
     // Modal y formulario
@@ -59,6 +67,14 @@
             p.categoria === selectedCategory;
 
         return matchesSearch && matchesCategory;
+    });
+
+    $: deletedProductsFiltrados = deletedProducts.filter((p) => {
+        const matchesSearch =
+            p.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        return matchesSearch;
     });
 
     // Actualizar categorías cuando cambien los productos
@@ -95,6 +111,10 @@
                 collection(db, "productos"),
                 orderBy("nombre", "asc"),
             );
+            const qDeleted = query(
+                collection(db, "productos_eliminados"),
+                orderBy("deletedAt", "desc"),
+            );
 
             unsubscribe = onSnapshot(
                 q,
@@ -104,12 +124,24 @@
                         ...doc.data(),
                     }));
                     loading = false;
-                    console.log("Productos cargados:", productos.length);
                 },
                 (err) => {
                     console.error("Error al cargar productos:", err);
                     error = "Error al cargar los productos";
                     loading = false;
+                },
+            );
+
+            unsubscribeDeleted = onSnapshot(
+                qDeleted,
+                (snapshot) => {
+                    deletedProducts = snapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    }));
+                },
+                (err) => {
+                    console.error("Error al cargar productos eliminados:", err);
                 },
             );
         } catch (err) {
@@ -167,12 +199,12 @@
     // Guardar producto
     async function handleSubmit() {
         if (!formData.nombre.trim()) {
-            alert("El nombre del producto es obligatorio");
+            error("El nombre del producto es obligatorio");
             return;
         }
 
         if (formData.precio <= 0) {
-            alert("El precio debe ser mayor a 0");
+            error("El precio debe ser mayor a 0");
             return;
         }
 
@@ -194,41 +226,72 @@
                     doc(db, "productos", editingProducto.id),
                     productData,
                 );
-                alert("Producto actualizado exitosamente");
+                notifySuccess("Producto actualizado exitosamente");
             } else {
                 // Crear nuevo producto
                 productData.fechaCreacion = serverTimestamp();
                 await addDoc(collection(db, "productos"), productData);
-                alert("Producto creado exitosamente");
+                notifySuccess("Producto creado exitosamente");
             }
 
             closeModal();
         } catch (err) {
             console.error("Error al guardar producto:", err);
             error = "Error al guardar el producto";
-            alert("Error al guardar el producto. Intente nuevamente.");
+            error("Error al guardar el producto. Intente nuevamente.");
         } finally {
             formSubmitting = false;
         }
     }
 
-    // Eliminar producto
+    // Eliminar producto (mover a sección de eliminados)
     async function handleDelete(producto) {
-        if (
-            !confirm(
-                `¿Está seguro de eliminar el producto "${producto.nombre}"?`,
-            )
-        ) {
-            return;
-        }
+        notifyConfirm(
+            `¿Está seguro de eliminar el producto "${producto.nombre}"?`,
+            async () => {
+                try {
+                    const { id, ...productData } = producto;
+                    await setDoc(doc(db, "productos_eliminados", producto.id), {
+                        ...productData,
+                        deletedAt: serverTimestamp(),
+                    });
+                    await deleteDoc(doc(db, "productos", producto.id));
+                    notifySuccess("Producto movido a eliminados");
+                } catch (err) {
+                    console.error("Error al eliminar producto:", err);
+                    notifyError("Error al eliminar el producto");
+                }
+            },
+            () => {
+                // Cancelado por el usuario
+            },
+        );
+    }
 
-        try {
-            await deleteDoc(doc(db, "productos", producto.id));
-            alert("Producto eliminado exitosamente");
-        } catch (err) {
-            console.error("Error al eliminar producto:", err);
-            alert("Error al eliminar el producto");
-        }
+    // Restaurar producto eliminado
+    async function handleRestore(producto) {
+        notifyConfirm(
+            `¿Deseas restaurar el producto "${producto.nombre}"?`,
+            async () => {
+                try {
+                    const { id, deletedAt, ...productData } = producto;
+                    await setDoc(doc(db, "productos", producto.id), {
+                        ...productData,
+                        fechaActualizacion: serverTimestamp(),
+                    });
+                    await deleteDoc(
+                        doc(db, "productos_eliminados", producto.id),
+                    );
+                    notifySuccess("Producto restaurado correctamente");
+                } catch (err) {
+                    console.error("Error al restaurar producto:", err);
+                    notifyError("Error al restaurar el producto");
+                }
+            },
+            () => {
+                // Cancelado por el usuario
+            },
+        );
     }
 
     // Lifecycle
@@ -242,6 +305,9 @@
     onDestroy(() => {
         if (unsubscribe) {
             unsubscribe();
+        }
+        if (unsubscribeDeleted) {
+            unsubscribeDeleted();
         }
     });
 </script>
@@ -257,10 +323,15 @@
 <div class="min-vh-100 bg-light">
     <div class="container py-4">
         <!-- Header -->
-        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
+        <div
+            class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3"
+        >
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
-                    <a href="/admin-panel-2025" class="btn btn-outline-secondary btn-sm">
+                    <a
+                        href="/admin-panel-2025"
+                        class="btn btn-outline-secondary btn-sm"
+                    >
                         <i class="bi bi-arrow-left me-1"></i> Dashboard
                     </a>
                 </div>
@@ -294,7 +365,11 @@
         </div>
 
         <!-- Filtros -->
-        <ProductSearchFilter bind:searchTerm bind:selectedCategory {categories} />
+        <ProductSearchFilter
+            bind:searchTerm
+            bind:selectedCategory
+            {categories}
+        />
 
         <!-- Mensaje de error -->
         {#if error}
@@ -353,13 +428,51 @@
                 </div>
             </div>
 
-        <!-- Grid de productos -->
+            <!-- Grid de productos -->
         {:else}
-            <ProductGrid productos={productosFiltrados} onEdit={openEditModal} onDelete={handleDelete} />
+            <ProductGrid
+                productos={productosFiltrados}
+                onEdit={openEditModal}
+                onDelete={handleDelete}
+            />
 
             <div class="mt-4 text-muted small text-center text-lg-start">
                 Mostrando {productosFiltrados.length} de {productos.length} productos
             </div>
+
+            {#if deletedProducts.length > 0}
+                <div class="mt-5">
+                    <div
+                        class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-3"
+                    >
+                        <div>
+                            <h2 class="h5 mb-1">Productos eliminados</h2>
+                            <p class="text-muted mb-0">
+                                {deletedProducts.length} producto{deletedProducts.length ===
+                                1
+                                    ? ""
+                                    : "s"} en eliminados
+                            </p>
+                        </div>
+                        <button
+                            aria-label="Recargar eliminados"
+                            class="btn btn-outline-secondary"
+                            on:click={loadProducts}
+                        >
+                            <i class="bi bi-arrow-clockwise"></i>
+                            <span class="d-none d-sm-inline ms-1"
+                                >Recargar eliminados</span
+                            >
+                        </button>
+                    </div>
+
+                    <ProductGrid
+                        productos={deletedProductsFiltrados}
+                        onRestore={handleRestore}
+                        isDeletedList={true}
+                    />
+                </div>
+            {/if}
         {/if}
     </div>
 </div>

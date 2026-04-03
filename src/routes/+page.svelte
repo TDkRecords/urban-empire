@@ -354,7 +354,7 @@
                             : ''} "
                         data-bs-parent="#accordionExample"
                     >
-                        <div class="accordion-body slate-gray text-dark">
+                        <div class="accordion-body slate-gray text-light">
                             {item.content}
                         </div>
                     </div>
@@ -408,5 +408,60 @@
         height: 4px;
         background: #8f52c1;
         transform: translateX(-50%);
+    }
+
+    .accordion-item {
+        background: #8f52c1;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 1rem;
+        box-shadow: 0 20px 40px rgba(10, 12, 35, 0.1);
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+
+    .accordion-button {
+        background: linear-gradient(
+            135deg,
+            rgba(127, 58, 179, 0.24),
+            rgba(82, 31, 121, 0.28)
+        );
+        color: #f8f2ff;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        border: none;
+        border-radius: 0;
+        padding: 1rem 1.25rem;
+        transition:
+            transform 0.2s ease,
+            background 0.25s ease;
+    }
+
+    .accordion-button::after {
+        filter: invert(1);
+    }
+
+    .accordion-button:not(.collapsed) {
+        background: linear-gradient(
+            135deg,
+            rgba(143, 82, 193, 0.38),
+            rgba(97, 50, 153, 0.44)
+        );
+        color: #fff;
+    }
+
+    .accordion-button:focus {
+        box-shadow: 0 0 0 0.32rem rgba(143, 82, 193, 0.25);
+    }
+
+    .accordion-button:hover {
+        transform: translateX(2px);
+    }
+
+    .accordion-body {
+        background: rgba(10, 8, 28, 0.82);
+        color: rgba(245, 237, 255, 0.95);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.3rem 1.25rem 1.5rem;
+        line-height: 1.75;
     }
 </style>

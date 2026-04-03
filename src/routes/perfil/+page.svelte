@@ -6,13 +6,7 @@
 	import { goto } from "$app/navigation";
 	import { browser } from "$app/environment";
 	import "bootstrap/dist/css/bootstrap.min.css";
-
-	let loading = true;
-	let saving = false;
-	let editMode = false;
-	let hasProfile = false;
-
-	// Datos del formulario
+	import { success, error } from "$lib/utils/notify";
 	let formData = {
 		nombre: "",
 		apellido: "",
@@ -80,7 +74,7 @@
 			!formData.edad ||
 			!formData.direccion
 		) {
-			alert("Por favor, completa todos los campos obligatorios");
+			error("Por favor, completa todos los campos obligatorios");
 			return;
 		}
 
@@ -101,13 +95,12 @@
 			if (hasProfile) {
 				// Actualizar perfil existente
 				await updateDoc(doc(db, "usuarios", $user.uid), userData);
-				alert("Perfil actualizado exitosamente");
+				success("Perfil actualizado exitosamente");
 			} else {
 				// Crear nuevo perfil
 				userData.createdAt = new Date().toISOString();
 				await setDoc(doc(db, "usuarios", $user.uid), userData);
-				alert("Perfil creado exitosamente");
-				hasProfile = true;
+				success("Perfil creado exitosamente");
 			}
 
 			originalData = { ...formData };
@@ -115,7 +108,7 @@
 			userProfile.set(userData);
 		} catch (error) {
 			console.error("Error al guardar perfil:", error);
-			alert("Error al guardar el perfil");
+			error("Error al guardar el perfil");
 		} finally {
 			saving = false;
 		}

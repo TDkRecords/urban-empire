@@ -4,9 +4,10 @@
     import DanielProfile from "$lib/assets/images/Image-Profile-Daniel.jpg";
     import AngelaProfile from "$lib/assets/images/Image-Profile-Angela.jpg";
     import { fade, fly, scale } from "svelte/transition";
+    import { success } from "$lib/utils/notify";
 
     const onSubmitHandler = () => {
-        alert("¡Mensaje enviado con éxito!");
+        success("¡Mensaje enviado con éxito!");
     };
 </script>
 

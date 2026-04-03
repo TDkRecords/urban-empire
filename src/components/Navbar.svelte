@@ -1,20 +1,21 @@
 <script>
     import "../app.css";
-    import { user, authLoading } from '$lib/stores/authStore.js';
-    import { auth, googleProvider } from '$lib/assets/js/firebase.js';
-    import { signInWithPopup, signOut } from 'firebase/auth';
-    import { goto } from '$app/navigation';
-    import { onMount } from 'svelte';
+    import { user, authLoading } from "$lib/stores/authStore.js";
+    import { auth, googleProvider } from "$lib/assets/js/firebase.js";
+    import { signInWithPopup, signOut } from "firebase/auth";
+    import { goto } from "$app/navigation";
+    import { onMount } from "svelte";
+    import { error } from "$lib/utils/notify";
 
     let showDropdown = false;
 
     async function handleGoogleLogin() {
         try {
             await signInWithPopup(auth, googleProvider);
-            goto('/perfil');
+            goto("/perfil");
         } catch (error) {
-            console.error('Error al iniciar sesión:', error);
-            alert('Error al iniciar sesión con Google');
+            console.error("Error al iniciar sesión:", error);
+            error("Error al iniciar sesión con Google");
         }
     }
 
@@ -22,9 +23,9 @@
         try {
             await signOut(auth);
             showDropdown = false;
-            goto('/');
+            goto("/");
         } catch (error) {
-            console.error('Error al cerrar sesión:', error);
+            console.error("Error al cerrar sesión:", error);
         }
     }
 
@@ -35,12 +36,12 @@
     // Cerrar dropdown al hacer click fuera
     onMount(() => {
         function handleClickOutside(event) {
-            if (showDropdown && !event.target.closest('.user-dropdown')) {
+            if (showDropdown && !event.target.closest(".user-dropdown")) {
                 showDropdown = false;
             }
         }
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
+        document.addEventListener("click", handleClickOutside);
+        return () => document.removeEventListener("click", handleClickOutside);
     });
 </script>
 
@@ -80,29 +81,47 @@
                         Contacto <i class="fa-solid fa-user-tie"></i>
                     </a>
                 </li>
-                
+
                 {#if !$authLoading}
                     {#if $user}
                         <li class="nav-item user-dropdown">
-                            <button class="nav-link text-light btn-user" on:click={toggleDropdown}>
-                                <img src={$user.photoURL} alt="{$user.displayName}" class="user-avatar" />
-                                {$user.displayName?.split(' ')[0] || 'Usuario'}
+                            <button
+                                class="nav-link text-light btn-user"
+                                on:click={toggleDropdown}
+                            >
+                                <img
+                                    src={$user.photoURL}
+                                    alt={$user.displayName}
+                                    class="user-avatar"
+                                />
+                                {$user.displayName?.split(" ")[0] || "Usuario"}
                                 <i class="fa-solid fa-chevron-down ms-1"></i>
                             </button>
                             {#if showDropdown}
                                 <div class="dropdown-menu-custom">
-                                    <a href="/perfil" class="dropdown-item-custom">
+                                    <a
+                                        href="/perfil"
+                                        class="dropdown-item-custom"
+                                    >
                                         <i class="fa-solid fa-user"></i> Mi Perfil
                                     </a>
-                                    <button on:click={handleLogout} class="dropdown-item-custom logout">
-                                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                                    <button
+                                        on:click={handleLogout}
+                                        class="dropdown-item-custom logout"
+                                    >
+                                        <i
+                                            class="fa-solid fa-right-from-bracket"
+                                        ></i> Cerrar Sesión
                                     </button>
                                 </div>
                             {/if}
                         </li>
                     {:else}
                         <li class="nav-item">
-                            <button class="btn-login" on:click={handleGoogleLogin}>
+                            <button
+                                class="btn-login"
+                                on:click={handleGoogleLogin}
+                            >
                                 <i class="fa-brands fa-google"></i> Iniciar Sesión
                             </button>
                         </li>

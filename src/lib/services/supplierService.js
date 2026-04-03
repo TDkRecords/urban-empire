@@ -20,7 +20,7 @@ let unsubscribeSuppliers = null;
 
 export function subscribeToSuppliers() {
     if (unsubscribeSuppliers) return;
-    
+
     unsubscribeSuppliers = onSnapshot(
         collection(db, 'proveedores'),
         (snapshot) => {
@@ -51,7 +51,7 @@ export async function getSuppliers() {
             id: doc.id,
             ...doc.data()
         }));
-        
+
         return suppliersData;
     } catch (error) {
         console.error('Error al obtener los proveedores:', error);
@@ -64,14 +64,13 @@ export async function getSupplierById(supplierId) {
     try {
         const docRef = doc(db, 'proveedores', supplierId);
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists()) {
             return {
                 id: docSnap.id,
                 ...docSnap.data()
             };
         } else {
-            console.log('No se encontró el proveedor');
             return null;
         }
     } catch (error) {
@@ -89,7 +88,7 @@ export async function createSupplier(supplierData) {
             activo: supplierData.activo !== undefined ? supplierData.activo : true,
             productosAsociados: supplierData.productosAsociados || 0
         });
-        
+
         return docRef.id;
     } catch (error) {
         console.error('Error al crear el proveedor:', error);
@@ -105,7 +104,7 @@ export async function updateSupplier(supplierId, supplierData) {
             ...supplierData,
             fechaActualizacion: new Date().toISOString()
         });
-        
+
         return true;
     } catch (error) {
         console.error('Error al actualizar el proveedor:', error);
@@ -134,7 +133,7 @@ export async function getProductsBySupplier(supplierId) {
                 ...doc.data()
             }))
             .filter(product => product.proveedorId === supplierId);
-        
+
         return products;
     } catch (error) {
         console.error('Error al obtener productos del proveedor:', error);

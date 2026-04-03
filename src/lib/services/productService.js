@@ -9,7 +9,7 @@ async function getProducts() {
             id: doc.id,
             ...doc.data()
         }));
-        
+
         return products;
     } catch (error) {
         console.error('Error al obtener los productos:', error);
@@ -22,14 +22,13 @@ async function getProductById(productId) {
     try {
         const docRef = doc(db, "productos", productId);
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists()) {
             return {
                 id: docSnap.id,
                 ...docSnap.data()
             };
         } else {
-            console.log("No se encontró el producto");
             return null;
         }
     } catch (error) {

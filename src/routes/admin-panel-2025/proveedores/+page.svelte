@@ -13,22 +13,30 @@
         query,
         orderBy,
         onSnapshot,
+        setDoc,
         serverTimestamp,
     } from "firebase/firestore";
     import { db } from "$lib/assets/js/firebase";
     import { fade, fly } from "svelte/transition";
+    import {
+        success as notifySuccess,
+        error as notifyError,
+        confirm as notifyConfirm,
+    } from "$lib/utils/notify";
 
     // Componentes
-    import SupplierSearch from "$lib/components/admin/suppliers/SupplierSearch.svelte";
-    import SupplierTable from "$lib/components/admin/suppliers/SupplierTable.svelte";
-    import SupplierFormModal from "$lib/components/admin/suppliers/SupplierFormModal.svelte";
+    import SupplierSearch from "./modules/SupplierSearch.svelte";
+    import SupplierTable from "./modules/SupplierTable.svelte";
+    import SupplierFormModal from "./modules/SupplierFormModal.svelte";
 
     // Estado
     let proveedores = [];
+    let deletedSuppliers = [];
     let loading = true;
     let error = null;
     let searchTerm = "";
     let unsubscribe = null;
+    let unsubscribeDeleted = null;
     let unsubscribeAuth = null;
 
     // Modal y formulario
@@ -77,12 +85,33 @@
                         ...doc.data(),
                     }));
                     loading = false;
-                    console.log("Proveedores cargados:", proveedores.length);
                 },
                 (err) => {
                     console.error("Error al cargar proveedores:", err);
                     error = "Error al cargar los proveedores";
                     loading = false;
+                },
+            );
+
+            // Cargar proveedores eliminados
+            const qDeleted = query(
+                collection(db, "proveedores_eliminados"),
+                orderBy("deletedAt", "desc"),
+            );
+
+            unsubscribeDeleted = onSnapshot(
+                qDeleted,
+                (snapshot) => {
+                    deletedSuppliers = snapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    }));
+                },
+                (err) => {
+                    console.error(
+                        "Error al cargar proveedores eliminados:",
+                        err,
+                    );
                 },
             );
         } catch (err) {
@@ -137,7 +166,7 @@
     // Guardar proveedor
     async function handleSubmit() {
         if (!formData.nombre.trim()) {
-            alert("El nombre del proveedor es obligatorio");
+            error("El nombre del proveedor es obligatorio");
             return;
         }
 
@@ -156,41 +185,75 @@
                     doc(db, "proveedores", editingProveedor.id),
                     providerData,
                 );
-                alert("Proveedor actualizado exitosamente");
+                notifySuccess("Proveedor actualizado exitosamente");
             } else {
                 // Crear nuevo proveedor
                 providerData.fechaCreacion = serverTimestamp();
                 await addDoc(collection(db, "proveedores"), providerData);
-                alert("Proveedor creado exitosamente");
+                success("Proveedor creado exitosamente");
             }
 
             closeModal();
         } catch (err) {
             console.error("Error al guardar proveedor:", err);
             error = "Error al guardar el proveedor";
-            alert("Error al guardar el proveedor. Intente nuevamente.");
+            error("Error al guardar el proveedor. Intente nuevamente.");
         } finally {
             formSubmitting = false;
         }
     }
 
-    // Eliminar proveedor
+    // Eliminar proveedor (mover a sección de eliminados)
     async function handleDelete(proveedor) {
-        if (
-            !confirm(
-                `¿Está seguro de eliminar el proveedor "${proveedor.nombre}"?`,
-            )
-        ) {
-            return;
-        }
+        notifyConfirm(
+            `¿Está seguro de eliminar el proveedor "${proveedor.nombre}"?`,
+            async () => {
+                try {
+                    const { id, ...supplierData } = proveedor;
+                    await setDoc(
+                        doc(db, "proveedores_eliminados", proveedor.id),
+                        {
+                            ...supplierData,
+                            deletedAt: serverTimestamp(),
+                        },
+                    );
+                    await deleteDoc(doc(db, "proveedores", proveedor.id));
+                    notifySuccess("Proveedor movido a eliminados");
+                } catch (err) {
+                    console.error("Error al eliminar proveedor:", err);
+                    notifyError("Error al eliminar el proveedor");
+                }
+            },
+            () => {
+                // Cancelado por el usuario
+            },
+        );
+    }
 
-        try {
-            await deleteDoc(doc(db, "proveedores", proveedor.id));
-            alert("Proveedor eliminado exitosamente");
-        } catch (err) {
-            console.error("Error al eliminar proveedor:", err);
-            alert("Error al eliminar el proveedor");
-        }
+    // Restaurar proveedor eliminado
+    async function handleRestore(proveedor) {
+        notifyConfirm(
+            `¿Deseas restaurar el proveedor "${proveedor.nombre}"?`,
+            async () => {
+                try {
+                    const { id, deletedAt, ...supplierData } = proveedor;
+                    await setDoc(doc(db, "proveedores", proveedor.id), {
+                        ...supplierData,
+                        fechaActualizacion: serverTimestamp(),
+                    });
+                    await deleteDoc(
+                        doc(db, "proveedores_eliminados", proveedor.id),
+                    );
+                    notifySuccess("Proveedor restaurado correctamente");
+                } catch (err) {
+                    console.error("Error al restaurar proveedor:", err);
+                    notifyError("Error al restaurar el proveedor");
+                }
+            },
+            () => {
+                // Cancelado por el usuario
+            },
+        );
     }
 
     // Alternar estado activo/inactivo
@@ -202,7 +265,7 @@
             });
         } catch (err) {
             console.error("Error al cambiar estado:", err);
-            alert("Error al cambiar el estado del proveedor");
+            notifyError("Error al cambiar el estado del proveedor");
         }
     }
 
@@ -228,6 +291,9 @@
         if (unsubscribe) {
             unsubscribe();
         }
+        if (unsubscribeDeleted) {
+            unsubscribeDeleted();
+        }
     });
 </script>
 
@@ -242,10 +308,15 @@
 <div class="min-vh-100 bg-light">
     <div class="container-fluid py-4">
         <!-- Header -->
-        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
+        <div
+            class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3"
+        >
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
-                    <a href="/admin-panel-2025" class="btn btn-outline-secondary btn-sm">
+                    <a
+                        href="/admin-panel-2025"
+                        class="btn btn-outline-secondary btn-sm"
+                    >
                         <i class="bi bi-arrow-left me-1"></i> Dashboard
                     </a>
                 </div>
@@ -284,11 +355,18 @@
         </div>
 
         <!-- Buscador -->
-        <SupplierSearch bind:searchTerm placeholder="Buscar por nombre, email, teléfono o contacto..." />
+        <SupplierSearch
+            bind:searchTerm
+            placeholder="Buscar por nombre, email, teléfono o contacto..."
+        />
 
         <!-- Mensaje de error -->
         {#if error}
-            <div class="alert alert-danger d-flex align-items-center" role="alert" in:fade>
+            <div
+                class="alert alert-danger d-flex align-items-center"
+                role="alert"
+                in:fade
+            >
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
                 <div>{error}</div>
             </div>
@@ -297,36 +375,49 @@
         <!-- Loading -->
         {#if loading}
             <div class="text-center py-5" in:fade>
-                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;">
+                <div
+                    class="spinner-border text-primary"
+                    style="width: 3rem; height: 3rem;"
+                >
                     <span class="visually-hidden">Cargando...</span>
                 </div>
                 <p class="mt-3 text-muted">Cargando proveedores...</p>
             </div>
 
-        <!-- Sin proveedores -->
+            <!-- Sin proveedores -->
         {:else if proveedores.length === 0}
             <div class="card shadow-sm" in:fade>
                 <div class="card-body text-center py-5">
-                    <i class="bi bi-people text-muted" style="font-size: 4rem; opacity: 0.5;"></i>
+                    <i
+                        class="bi bi-people text-muted"
+                        style="font-size: 4rem; opacity: 0.5;"
+                    ></i>
                     <h3 class="h4 mt-4">No hay proveedores registrados</h3>
-                    <p class="text-muted mb-4">Comienza agregando tu primer proveedor</p>
+                    <p class="text-muted mb-4">
+                        Comienza agregando tu primer proveedor
+                    </p>
                     <button class="btn btn-primary" on:click={openCreateModal}>
                         <i class="bi bi-plus-lg me-1"></i> Agregar Proveedor
                     </button>
                 </div>
             </div>
 
-        <!-- Sin resultados de búsqueda -->
+            <!-- Sin resultados de búsqueda -->
         {:else if proveedoresFiltrados.length === 0}
             <div class="card shadow-sm" in:fade>
                 <div class="card-body text-center py-5">
-                    <i class="bi bi-search text-muted" style="font-size: 4rem; opacity: 0.5;"></i>
+                    <i
+                        class="bi bi-search text-muted"
+                        style="font-size: 4rem; opacity: 0.5;"
+                    ></i>
                     <h3 class="h4 mt-4">No se encontraron resultados</h3>
-                    <p class="text-muted">Intenta con otros términos de búsqueda</p>
+                    <p class="text-muted">
+                        Intenta con otros términos de búsqueda
+                    </p>
                 </div>
             </div>
 
-        <!-- Tabla de proveedores -->
+            <!-- Tabla de proveedores -->
         {:else}
             <SupplierTable
                 proveedores={proveedoresFiltrados}
@@ -337,6 +428,81 @@
 
             <div class="mt-3 text-muted small text-center text-lg-start">
                 Mostrando {proveedoresFiltrados.length} de {proveedores.length} proveedores
+            </div>
+        {/if}
+
+        <!-- Proveedores eliminados -->
+        {#if deletedSuppliers.length > 0}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light border-bottom py-3">
+                            <h5 class="mb-0 fw-semibold">
+                                <i class="bi bi-trash-fill text-danger me-2"
+                                ></i>
+                                Proveedores eliminados ({deletedSuppliers.length})
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                {#each deletedSuppliers as supplier, i}
+                                    <div
+                                        class="list-group-item list-group-item-action"
+                                        in:fly={{
+                                            x: -20,
+                                            duration: 300,
+                                            delay: i * 50,
+                                        }}
+                                    >
+                                        <div
+                                            class="d-flex justify-content-between align-items-center"
+                                        >
+                                            <div>
+                                                <h6 class="mb-1 fw-semibold">
+                                                    {supplier.nombre}
+                                                </h6>
+                                                <div
+                                                    class="d-flex gap-3 align-items-center"
+                                                >
+                                                    {#if supplier.email}
+                                                        <small
+                                                            class="text-muted"
+                                                        >
+                                                            <i
+                                                                class="bi bi-envelope me-1"
+                                                            ></i>
+                                                            {supplier.email}
+                                                        </small>
+                                                    {/if}
+                                                    {#if supplier.telefono}
+                                                        <small
+                                                            class="text-muted"
+                                                        >
+                                                            <i
+                                                                class="bi bi-telephone me-1"
+                                                            ></i>
+                                                            {supplier.telefono}
+                                                        </small>
+                                                    {/if}
+                                                </div>
+                                            </div>
+                                            <button
+                                                class="btn btn-sm btn-outline-success"
+                                                on:click={() =>
+                                                    handleRestore(supplier)}
+                                            >
+                                                <i
+                                                    class="bi bi-arrow-counterclockwise me-1"
+                                                ></i>
+                                                Restaurar
+                                            </button>
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         {/if}
     </div>

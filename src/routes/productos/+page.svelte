@@ -3,6 +3,7 @@
     import { fade, fly, scale } from "svelte/transition";
     import { cart } from "$lib/stores/cart";
     import { getProducts } from "$lib/services/productService";
+    import { error as notifyError } from "$lib/utils/notify";
 
     let products = [];
     let selectedProduct = null;
@@ -40,7 +41,7 @@
         try {
             // Validar que el producto tenga stock
             if (product.stock <= 0) {
-                alert("Este producto no tiene stock disponible");
+                error("Este producto no tiene stock disponible");
                 addingToCart = false;
                 return;
             }
@@ -80,7 +81,7 @@
             }, 500);
         } catch (error) {
             console.error("Error al agregar al carrito:", error);
-            alert(
+            notifyError(
                 "Error al agregar el producto al carrito. Por favor, inicia sesión primero.",
             );
         } finally {

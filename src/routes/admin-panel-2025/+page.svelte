@@ -15,47 +15,53 @@
 		orderBy,
 		limit,
 		onSnapshot,
+		setDoc,
+		deleteDoc,
+		doc,
+		serverTimestamp,
 	} from "firebase/firestore";
 	import { db } from "$lib/assets/js/firebase";
 	import { fade, fly, scale } from "svelte/transition";
+	import {
+		success as notifySuccess,
+		error as notifyError,
+		confirm as notifyConfirm,
+	} from "$lib/utils/notify";
 
-	// Stats
 	let stats = {
 		totalProducts: 0,
 		totalSuppliers: 0,
 		lowStockProducts: 0,
 		activeSuppliers: 0,
+		deletedProducts: 0,
+		deletedSuppliers: 0,
 	};
 
 	let loading = true;
 	let recentProducts = [];
 	let recentSuppliers = [];
+	let deletedProducts = [];
+	let deletedSuppliers = [];
 	let adminUser = { email: "" };
 	let unsubscribeProducts = null;
 	let unsubscribeSuppliers = null;
-
-	let unsubscribeAuth = null;
-
-	// Verificar autenticación
-	function checkAuth() {
-		if (!browser) return false;
-		if (!isAuthenticated()) {
-			goto("/admin-panel-2025/login");
-			return false;
-		}
-		return true;
-	}
-
-	onMount(async () => {
-		if (await checkAuth()) {
-			adminUser = getCurrentUser();
-			await loadDashboard();
-		}
-	});
-
+	let unsubscribeDeleted = null;
+	let unsubscribeDeletedSuppliers = null;
 	onDestroy(() => {
 		if (unsubscribeProducts) unsubscribeProducts();
 		if (unsubscribeSuppliers) unsubscribeSuppliers();
+		if (unsubscribeDeleted) unsubscribeDeleted();
+		if (unsubscribeDeletedSuppliers) unsubscribeDeletedSuppliers();
+	});
+
+	onMount(async () => {
+		if (!(await isAuthenticated())) {
+			goto("/admin-panel-2025/login");
+			return;
+		}
+
+		adminUser = await getCurrentUser();
+		await loadDashboard();
 	});
 
 	// Función de cierre de sesión mejorada
@@ -70,6 +76,56 @@
 		} catch (error) {
 			console.error("Error al cerrar sesión:", error);
 		}
+	}
+
+	async function handleRestore(producto) {
+		notifyConfirm(
+			`¿Deseas restaurar el producto "${producto.nombre}"?`,
+			async () => {
+				try {
+					const { id, deletedAt, ...productData } = producto;
+					await setDoc(doc(db, "productos", producto.id), {
+						...productData,
+						fechaActualizacion: serverTimestamp(),
+					});
+					await deleteDoc(
+						doc(db, "productos_eliminados", producto.id),
+					);
+					notifySuccess("Producto restaurado correctamente");
+				} catch (err) {
+					console.error("Error al restaurar producto:", err);
+					notifyError("Error al restaurar el producto");
+				}
+			},
+			() => {
+				// Cancelado por el usuario
+			},
+		);
+	}
+
+	async function handleRestoreSupplier(supplier) {
+		notifyConfirm(
+			`¿Deseas restaurar el proveedor "${supplier.nombre}"?`,
+			async () => {
+				try {
+					const { id, deletedAt, ...supplierData } = supplier;
+					await setDoc(doc(db, "proveedores", supplier.id), {
+						...supplierData,
+						fechaActualizacion: serverTimestamp(),
+					});
+					await deleteDoc(
+						doc(db, "proveedores_eliminados", supplier.id),
+					);
+					notifySuccess("Proveedor restaurado correctamente");
+				} catch (err) {
+					console.error("Error al restaurar proveedor:", err);
+					notifyError("Error al restaurar el proveedor");
+				}
+			},
+			() => {
+				// Cancelado por el usuario
+			},
+		);
 	}
 
 	async function loadDashboard() {
@@ -133,6 +189,51 @@
 					}));
 				},
 			);
+
+			// Suscribirse a productos eliminados en tiempo real
+			const deletedProductsQuery = query(
+				collection(db, "productos_eliminados"),
+				orderBy("deletedAt", "desc"),
+				limit(5),
+			);
+
+			unsubscribeDeleted = onSnapshot(
+				deletedProductsQuery,
+				(snapshot) => {
+					deletedProducts = snapshot.docs.map((doc) => ({
+						id: doc.id,
+						...doc.data(),
+					}));
+					stats.deletedProducts = snapshot.size;
+				},
+				(err) => {
+					console.error("Error al cargar productos eliminados:", err);
+				},
+			);
+
+			// Suscribirse a proveedores eliminados en tiempo real
+			const deletedSuppliersQuery = query(
+				collection(db, "proveedores_eliminados"),
+				orderBy("deletedAt", "desc"),
+				limit(5),
+			);
+
+			unsubscribeDeletedSuppliers = onSnapshot(
+				deletedSuppliersQuery,
+				(snapshot) => {
+					deletedSuppliers = snapshot.docs.map((doc) => ({
+						id: doc.id,
+						...doc.data(),
+					}));
+					stats.deletedSuppliers = snapshot.size;
+				},
+				(err) => {
+					console.error(
+						"Error al cargar proveedores eliminados:",
+						err,
+					);
+				},
+			);
 		} catch (error) {
 			console.error("Error loading dashboard:", error);
 		} finally {
@@ -150,7 +251,6 @@
 
 	// Limpiar suscripciones al desmontar
 	onDestroy(() => {
-		if (unsubscribeAuth) unsubscribeAuth();
 		if (unsubscribeProducts) unsubscribeProducts();
 		if (unsubscribeSuppliers) unsubscribeSuppliers();
 	});
@@ -579,6 +679,216 @@
 														? "Activo"
 														: "Inactivo"}
 												</span>
+											</div>
+										</div>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row g-4 mt-4" in:fly={{ y: 50, duration: 600, delay: 600 }}>
+			<div class="col-12">
+				<div class="card h-100 border-0 shadow-sm">
+					<div
+						class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3"
+					>
+						<h5 class="mb-0 fw-semibold">
+							<i class="bi bi-trash-fill text-danger me-2"></i>
+							Productos eliminados
+						</h5>
+						<a
+							href="/admin-panel-2025/productos"
+							class="btn btn-sm btn-link text-decoration-none"
+						>
+							Ver todos los eliminados
+							<i class="bi bi-arrow-right"></i>
+						</a>
+					</div>
+					<div class="card-body p-0">
+						{#if loading}
+							<div class="p-4">
+								{#each Array(5) as _}
+									<div class="placeholder-glow mb-3">
+										<span class="placeholder col-12"></span>
+									</div>
+								{/each}
+							</div>
+						{:else if deletedProducts.length === 0}
+							<div class="text-center p-5">
+								<i
+									class="bi bi-trash text-muted"
+									style="font-size: 3rem; opacity: 0.3;"
+								></i>
+								<p class="mt-3 text-muted mb-0">
+									No hay productos eliminados
+								</p>
+							</div>
+						{:else}
+							<div class="list-group list-group-flush">
+								{#each deletedProducts as product, i}
+									<div
+										class="list-group-item list-group-item-action"
+										in:fly={{
+											x: -20,
+											duration: 300,
+											delay: i * 50,
+										}}
+									>
+										<div
+											class="d-flex justify-content-between align-items-center"
+										>
+											<div
+												class="d-flex align-items-center gap-3"
+											>
+												{#if product.imagen}
+													<img
+														src={product.imagen}
+														alt={product.nombre}
+														class="rounded product-thumb"
+													/>
+												{:else}
+													<div
+														class="product-thumb-placeholder"
+													>
+														<i class="bi bi-image"
+														></i>
+													</div>
+												{/if}
+											</div>
+											<div>
+												<h6 class="mb-1 fw-semibold">
+													{product.nombre}
+												</h6>
+												<div
+													class="d-flex gap-2 align-items-center"
+												>
+													{#if product.categoria}
+														<span
+															class="badge bg-light text-dark"
+															>{product.categoria}</span
+														>
+													{/if}
+													<small class="text-muted"
+														>Stock: {product.stock ||
+															0}</small
+													>
+												</div>
+											</div>
+										</div>
+										<div class="text-end">
+											<button
+												class="btn btn-sm btn-outline-success"
+												on:click={() =>
+													handleRestore(product)}
+											>
+												<i
+													class="bi bi-arrow-counterclockwise me-1"
+												></i>
+												Restaurar
+											</button>
+										</div>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row g-4 mt-4" in:fly={{ y: 50, duration: 600, delay: 600 }}>
+			<div class="col-12">
+				<div class="card h-100 border-0 shadow-sm">
+					<div
+						class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3"
+					>
+						<h5 class="mb-0 fw-semibold">
+							<i class="bi bi-people-fill text-warning me-2"></i>
+							Proveedores eliminados
+						</h5>
+						<a
+							href="/admin-panel-2025/proveedores"
+							class="btn btn-sm btn-link text-decoration-none"
+						>
+							Ver todos los eliminados
+							<i class="bi bi-arrow-right"></i>
+						</a>
+					</div>
+					<div class="card-body p-0">
+						{#if loading}
+							<div class="p-4">
+								{#each Array(5) as _}
+									<div class="placeholder-glow mb-3">
+										<span class="placeholder col-12"></span>
+									</div>
+								{/each}
+							</div>
+						{:else if deletedSuppliers.length === 0}
+							<div class="text-center p-5">
+								<i
+									class="bi bi-people text-muted"
+									style="font-size: 3rem; opacity: 0.3;"
+								></i>
+								<p class="mt-3 text-muted mb-0">
+									No hay proveedores eliminados
+								</p>
+							</div>
+						{:else}
+							<div class="list-group list-group-flush">
+								{#each deletedSuppliers as supplier, i}
+									<div
+										class="list-group-item list-group-item-action"
+										in:fly={{
+											x: -20,
+											duration: 300,
+											delay: i * 50,
+										}}
+									>
+										<div
+											class="d-flex justify-content-between align-items-center"
+										>
+											<div>
+												<h6 class="mb-1 fw-semibold">
+													{supplier.nombre}
+												</h6>
+												<div
+													class="d-flex gap-2 align-items-center"
+												>
+													{#if supplier.email}
+														<span
+															class="badge bg-light text-dark"
+														>
+															<i
+																class="bi bi-envelope me-1"
+															></i>
+															{supplier.email}
+														</span>
+													{/if}
+													{#if supplier.telefono}
+														<small
+															class="text-muted"
+															>Tel: {supplier.telefono}</small
+														>
+													{/if}
+												</div>
+											</div>
+											<div class="text-end">
+												<button
+													class="btn btn-sm btn-outline-success"
+													on:click={() =>
+														handleRestoreSupplier(
+															supplier,
+														)}
+												>
+													<i
+														class="bi bi-arrow-counterclockwise me-1"
+													></i>
+													Restaurar
+												</button>
 											</div>
 										</div>
 									</div>

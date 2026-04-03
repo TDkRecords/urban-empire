@@ -1,5 +1,6 @@
 <script>
     import { fly, fade, scale } from "svelte/transition";
+    import { success } from "$lib/utils/notify";
     let email = "";
     const socialLinks = [
         {
@@ -24,7 +25,7 @@
         },
     ];
     const submitNewsletter = () => {
-        alert(`Gracias por suscribirte, ${email}!`);
+        success(`Gracias por suscribirte, ${email}!`);
         email = "";
     };
 </script>
