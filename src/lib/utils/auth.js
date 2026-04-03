@@ -1,30 +1,43 @@
 // src/lib/utils/auth.js
 import { browser } from '$app/environment';
-
-const ADMIN_CREDENTIALS = {
-    email: 'admin@urbanempire.com',
-    password: 'admin123'
-};
+import { db } from '$lib/assets/js/firebase.js';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const AUTH_KEY = 'urban_admin_auth';
 
-export function login(email, password) {
+export async function login(username, password) {
     if (!browser) {
         return { success: false, error: 'No disponible en servidor' };
     }
 
-    if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
-        const authData = {
-            email,
-            timestamp: new Date().toISOString(),
-            authenticated: true
-        };
+    try {
+        // Consultar la colección administradores
+        const q = query(
+            collection(db, 'administradores'),
+            where('usuario', '==', username),
+            where('contraseña', '==', password)
+        );
 
-        localStorage.setItem(AUTH_KEY, JSON.stringify(authData));
-        return { success: true };
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            // Usuario encontrado
+            const adminData = querySnapshot.docs[0].data();
+            const authData = {
+                usuario: adminData.usuario,
+                timestamp: new Date().toISOString(),
+                authenticated: true
+            };
+
+            localStorage.setItem(AUTH_KEY, JSON.stringify(authData));
+            return { success: true };
+        } else {
+            return { success: false, error: 'Credenciales incorrectas' };
+        }
+    } catch (error) {
+        console.error('Error al verificar credenciales:', error);
+        return { success: false, error: 'Error al iniciar sesión. Intente nuevamente.' };
     }
-
-    return { success: false, error: 'Credenciales incorrectas' };
 }
 
 export function logout() {
@@ -54,7 +67,7 @@ export function getCurrentUser() {
 
     try {
         const parsed = JSON.parse(authData);
-        return parsed.authenticated ? { email: parsed.email } : null;
+        return parsed.authenticated ? { usuario: parsed.usuario } : null;
     } catch {
         return null;
     }

@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from "svelte";
+	import { onMount, onDestroy } from "svelte";
 	import { browser } from "$app/environment";
 	import { goto } from "$app/navigation";
 	import {
@@ -34,26 +34,16 @@
 	let unsubscribeProducts = null;
 	let unsubscribeSuppliers = null;
 
-	// Navegación protegida
-	async function checkAuth() {
+	let unsubscribeAuth = null;
+
+	// Verificar autenticación
+	function checkAuth() {
 		if (!browser) return false;
-
-		const user = getCurrentUser();
-		const currentPath = window.location.pathname;
-		const isLoginPage =
-			currentPath.endsWith("/login") || currentPath.endsWith("/login/");
-
-		if (!user && !isLoginPage) {
-			await goto("/admin-panel-2025/login");
+		if (!isAuthenticated()) {
+			goto("/admin-panel-2025/login");
 			return false;
 		}
-
-		if (user && isLoginPage) {
-			await goto("/admin-panel-2025/");
-			return false;
-		}
-
-		return !!user;
+		return true;
 	}
 
 	onMount(async () => {
@@ -63,6 +53,11 @@
 		}
 	});
 
+	onDestroy(() => {
+		if (unsubscribeProducts) unsubscribeProducts();
+		if (unsubscribeSuppliers) unsubscribeSuppliers();
+	});
+
 	// Función de cierre de sesión mejorada
 	async function logout() {
 		try {
@@ -70,7 +65,7 @@
 			if (unsubscribeProducts) unsubscribeProducts();
 			if (unsubscribeSuppliers) unsubscribeSuppliers();
 
-			await authLogout();
+			authLogout();
 			await goto("/admin-panel-2025/login");
 		} catch (error) {
 			console.error("Error al cerrar sesión:", error);
@@ -154,8 +149,8 @@
 	}
 
 	// Limpiar suscripciones al desmontar
-	import { onDestroy } from "svelte";
 	onDestroy(() => {
+		if (unsubscribeAuth) unsubscribeAuth();
 		if (unsubscribeProducts) unsubscribeProducts();
 		if (unsubscribeSuppliers) unsubscribeSuppliers();
 	});
@@ -182,7 +177,7 @@
 					Panel de Control
 				</h1>
 				<p class="text-muted mb-0 mt-1">
-					Bienvenido de vuelta, {adminUser.email}
+					Bienvenido de vuelta, {adminUser.usuario}
 				</p>
 			</div>
 			<button class="btn btn-outline-danger btn-sm" on:click={logout}>

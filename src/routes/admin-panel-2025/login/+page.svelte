@@ -7,7 +7,7 @@
     let password = "";
     let error = "";
     let loading = false;
-    let rememberMe = false;
+    let authenticated = false;
 
     // Redirigir si ya está autenticado
     onMount(() => {
@@ -22,7 +22,7 @@
 
         // Validación básica
         if (!email) {
-            error = "Por favor ingrese su correo electrónico";
+            error = "Por favor ingrese su usuario";
             return;
         }
 
@@ -61,7 +61,7 @@
     />
 </svelte:head>
 
-<div class="min-vh-100 d-flex align-items-center bg-gradient-primary">
+<div class="min-vh-100 d-flex align-items-center purple-900">
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6 col-xl-5">
@@ -94,21 +94,21 @@
                         {/if}
 
                         <form on:submit={handleLogin}>
-                            <!-- Campo de Correo -->
+                            <!-- Campo de Usuario -->
                             <div class="mb-3">
                                 <label for="email" class="form-label"
-                                    >Correo Electrónico</label
+                                    >Usuario</label
                                 >
                                 <div class="input-group">
                                     <span class="input-group-text">
-                                        <i class="bi bi-envelope"></i>
+                                        <i class="bi bi-person"></i>
                                     </span>
                                     <input
-                                        type="email"
+                                        type="text"
                                         id="email"
                                         class="form-control form-control-lg"
                                         bind:value={email}
-                                        placeholder="tu@correo.com"
+                                        placeholder="tuusuario"
                                         required
                                         autocomplete="username"
                                         disabled={loading}
@@ -136,23 +136,6 @@
                                         disabled={loading}
                                     />
                                 </div>
-                            </div>
-
-                            <!-- Recordar sesión -->
-                            <div class="mb-4 form-check">
-                                <input
-                                    type="checkbox"
-                                    id="rememberMe"
-                                    class="form-check-input"
-                                    bind:checked={rememberMe}
-                                    disabled={loading}
-                                />
-                                <label
-                                    class="form-check-label"
-                                    for="rememberMe"
-                                >
-                                    Recordar mi sesión
-                                </label>
                             </div>
 
                             <!-- Botón de Inicio de Sesión -->
@@ -198,9 +181,6 @@
         padding: 0;
     }
 
-    .bg-gradient-primary {
-        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-    }
 
     .card {
         border-radius: 1rem;
@@ -208,10 +188,6 @@
     }
 
     .form-control,
-    .form-select {
-        padding: 0.75rem 1rem;
-        border-radius: 0.5rem;
-    }
 
     .btn {
         border-radius: 0.5rem;
