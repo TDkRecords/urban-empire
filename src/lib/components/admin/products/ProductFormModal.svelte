@@ -60,6 +60,26 @@
                                 ></textarea>
                             </div>
 
+                            <!-- Categoría -->
+                            <div class="col-12 col-md-6">
+                                <label for="categoria" class="form-label fw-semibold">
+                                    <i class="bi bi-tag me-1"></i>
+                                    Categoría
+                                </label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="categoria"
+                                    bind:value={formData.categoria}
+                                    placeholder="Ej: Camisetas"
+                                    list="categorias"
+                                />
+                                <datalist id="categorias">
+                                    {#each categories.filter((c) => c !== "Todas" && c !== "Sin categoría") as cat}
+                                        <option value={cat}></option>
+                                    {/each}
+                                </datalist>
+                            </div>
 
                             <!-- Stock -->
                             <div class="col-12 col-md-6">

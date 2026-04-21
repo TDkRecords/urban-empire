@@ -25,7 +25,13 @@
     } from "$lib/utils/notify";
 
     // Servicios
-    import { getTags, createTag, updateTag, deleteTag, tags as tagsStore } from "$lib/services/tagService";
+    import {
+        getTags,
+        createTag,
+        updateTag,
+        deleteTag,
+        tags as tagsStore,
+    } from "$lib/services/tagService";
 
     // Componentes
     import ProductSearchFilter from "./modules/ProductSearchFilter.svelte";
@@ -61,19 +67,19 @@
 
     // Productos filtrados
     $: productosFiltrados = productos.filter((p) => {
-    const matchesSearch =
-        p.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch =
+            p.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesTag =
-        selectedTag === "all" ||
-        (selectedTag === "sin-etiqueta" && !p.etiquetas) ||
-        (p.etiquetas &&
-            p.etiquetas
-                .toLowerCase()
-                .split(",")
-                .map((t) => t.trim())
-                .includes(selectedTag.toLowerCase()));
+        const matchesTag =
+            selectedTag === "all" ||
+            (selectedTag === "sin-etiqueta" && !p.etiquetas) ||
+            (p.etiquetas &&
+                p.etiquetas
+                    .toLowerCase()
+                    .split(",")
+                    .map((t) => t.trim())
+                    .includes(selectedTag.toLowerCase()));
 
         return matchesSearch && matchesTag;
     });
@@ -116,12 +122,16 @@
             unsubscribe = onSnapshot(
                 q,
                 (snapshot) => {
-                    console.log('Productos snapshot recibido:', snapshot.docs.length, 'documentos');
+                    console.log(
+                        "Productos snapshot recibido:",
+                        snapshot.docs.length,
+                        "documentos",
+                    );
                     productos = snapshot.docs.map((doc) => ({
                         id: doc.id,
                         ...doc.data(),
                     }));
-                    console.log('Productos cargados:', productos.length);
+                    console.log("Productos cargados:", productos.length);
                     loading = false;
                 },
                 (err) => {
@@ -329,14 +339,6 @@
             class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3"
         >
             <div>
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <a
-                        href="/admin-panel-2025"
-                        class="btn btn-outline-secondary btn-sm"
-                    >
-                        <i class="bi bi-arrow-left me-1"></i> Dashboard
-                    </a>
-                </div>
                 <h1 class="h3 mb-0">
                     <i class="bi bi-box-seam-fill me-2 text-primary"></i>
                     Gestión de Productos

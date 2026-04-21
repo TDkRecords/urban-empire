@@ -271,26 +271,6 @@
 
 <div class="min-vh-100 dashboard-bg">
 	<div class="container-fluid py-4">
-		<!-- Header con animación -->
-		<div
-			class="d-flex justify-content-between align-items-center mb-4"
-			in:fly={{ y: -20, duration: 600 }}
-		>
-			<div>
-				<h1 class="h3 mb-0 fw-bold">
-					<i class="bi bi-grid-fill me-2 text-primary"></i>
-					Panel de Control
-				</h1>
-				<p class="text-muted mb-0 mt-1">
-					Bienvenido de vuelta, {adminUser.usuario}
-				</p>
-			</div>
-			<button class="btn btn-outline-danger btn-sm" on:click={logout}>
-				<i class="bi bi-box-arrow-right me-1"></i>
-				Cerrar sesión
-			</button>
-		</div>
-
 		<!-- Stats Cards con animación -->
 		{#if loading}
 			<div class="row g-4 mb-4">

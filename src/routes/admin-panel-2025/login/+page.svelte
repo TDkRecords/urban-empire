@@ -108,7 +108,7 @@
                                         id="email"
                                         class="form-control form-control-lg"
                                         bind:value={email}
-                                        placeholder="tuusuario"
+                                        placeholder="email"
                                         required
                                         autocomplete="username"
                                         disabled={loading}
@@ -181,14 +181,12 @@
         padding: 0;
     }
 
-
     .card {
         border-radius: 1rem;
         overflow: hidden;
     }
 
     .form-control,
-
     .btn {
         border-radius: 0.5rem;
         font-weight: 600;

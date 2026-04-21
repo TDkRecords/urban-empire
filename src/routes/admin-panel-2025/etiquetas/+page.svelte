@@ -1,22 +1,6 @@
 <script>
-    import { onMount, onDestroy } from "svelte";
-    import { browser } from "$app/environment";
-    import { goto } from "$app/navigation";
-    import { getCurrentUser, isAuthenticated } from "$lib/utils/auth";
-    import {
-        collection,
-        getDocs,
-        addDoc,
-        updateDoc,
-        deleteDoc,
-        doc,
-        query,
-        orderBy,
-        onSnapshot,
-        serverTimestamp,
-    } from "firebase/firestore";
-    import { db } from "$lib/assets/js/firebase";
-    import { fade, fly, scale } from "svelte/transition";
+    import { serverTimestamp } from "firebase/firestore";
+    import { fade } from "svelte/transition";
     import {
         success as notifySuccess,
         error as notifyError,
@@ -24,18 +8,21 @@
     } from "$lib/utils/notify";
 
     // Servicios
-    import { createTag, updateTag, deleteTag, tags as tagsStore } from "$lib/services/tagService";
+    import {
+        createTag,
+        updateTag,
+        deleteTag,
+        tags as tagsStore,
+    } from "$lib/services/tagService";
 
     // Componentes
     import TagFormModal from "./modules/TagFormModal.svelte";
     import TagTable from "./modules/TagTable.svelte";
 
     // Estado
-    let loading = true;
+    let loading = false;
     let error = null;
     let searchTerm = "";
-    let unsubscribe = null;
-    let unsubscribeAuth = null;
 
     // Modal y formulario
     let showModal = false;
@@ -55,33 +42,6 @@
 
         return matchesSearch;
     });
-
-    // Verificar autenticación
-    function checkAuth() {
-        if (!browser) return false;
-        if (!isAuthenticated()) {
-            goto("/admin-panel-2025/login");
-            return false;
-        }
-        return true;
-    }
-
-    // Cargar etiquetas con onSnapshot (tiempo real)
-    function loadTags() {
-        if (!browser || !checkAuth()) return;
-
-        loading = true;
-        error = null;
-
-        try {
-            // El store ya está suscrito automáticamente
-            loading = false;
-        } catch (err) {
-            console.error("Error al configurar listener:", err);
-            error = "Error al configurar la conexión con la base de datos";
-            loading = false;
-        }
-    }
 
     // Abrir modal para crear
     function openCreateModal() {
@@ -171,26 +131,17 @@
             },
         );
     }
-
-    // Lifecycle
-    onMount(() => {
-        if (!browser) return;
-        if (checkAuth()) {
-            loadTags();
-        }
-    });
-
-    onDestroy(() => {
-        if (unsubscribe) unsubscribe();
-        if (unsubscribeAuth) unsubscribeAuth();
-    });
 </script>
 
 <svelte:head>
     <title>Gestión de Etiquetas - Panel Admin</title>
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+    />
 </svelte:head>
 
-<div class="container-fluid py-4" in:fade={{ duration: 300 }}>
+<div class="container py-4" in:fade={{ duration: 300 }}>
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -223,7 +174,9 @@
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <div class="input-group">
-                                <span class="input-group-text bg-light border-0">
+                                <span
+                                    class="input-group-text bg-light border-0"
+                                >
                                     <i class="fas fa-search text-muted"></i>
                                 </span>
                                 <input
@@ -247,23 +200,23 @@
                 <div class="card-body p-0">
                     {#if loading}
                         <div class="text-center py-5">
-                            <div class="spinner-border text-primary" role="status">
+                            <div
+                                class="spinner-border text-primary"
+                                role="status"
+                            >
                                 <span class="visually-hidden">Cargando...</span>
                             </div>
                             <p class="text-muted mt-2">Cargando etiquetas...</p>
                         </div>
                     {:else if error}
                         <div class="text-center py-5">
-                            <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                            <h5 class="text-danger">Error al cargar etiquetas</h5>
+                            <i
+                                class="fas fa-exclamation-triangle fa-3x text-danger mb-3"
+                            ></i>
+                            <h5 class="text-danger">
+                                Error al cargar etiquetas
+                            </h5>
                             <p class="text-muted">{error}</p>
-                            <button
-                                class="btn btn-outline-primary"
-                                on:click={loadTags}
-                            >
-                                <i class="fas fa-redo me-1"></i>
-                                Reintentar
-                            </button>
                         </div>
                     {:else}
                         <TagTable
@@ -287,47 +240,3 @@
     onClose={closeModal}
     onSubmit={handleSubmit}
 />
-
-<style>
-    .card {
-        border-radius: 12px;
-        overflow: hidden;
-    }
-
-    .btn {
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-    }
-
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .form-control {
-        border-radius: 8px;
-        border: 1px solid #e9ecef;
-        transition: all 0.2s ease;
-    }
-
-    .form-control:focus {
-        border-color: #007bff;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-
-    .input-group-text {
-        border-radius: 8px 0 0 8px;
-    }
-
-    @media (max-width: 768px) {
-        .d-flex.justify-content-between {
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .btn {
-            width: 100%;
-        }
-    }
-</style>

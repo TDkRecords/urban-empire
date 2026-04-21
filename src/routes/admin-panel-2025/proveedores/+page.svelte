@@ -306,20 +306,12 @@
 </svelte:head>
 
 <div class="min-vh-100 bg-light">
-    <div class="container-fluid py-4">
+    <div class="container py-4">
         <!-- Header -->
         <div
             class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3"
         >
             <div>
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <a
-                        href="/admin-panel-2025"
-                        class="btn btn-outline-secondary btn-sm"
-                    >
-                        <i class="bi bi-arrow-left me-1"></i> Dashboard
-                    </a>
-                </div>
                 <h1 class="h3 mb-0">
                     <i class="bi bi-people-fill me-2 text-primary"></i>
                     Gestión de Proveedores
