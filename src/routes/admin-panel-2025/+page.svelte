@@ -490,6 +490,58 @@
 			</div>
 		{/if}
 
+		<!-- Quick Actions -->
+		<div
+			class="row mt-4 mb-4"
+			in:fly={{ y: 50, duration: 600, delay: 600 }}
+		>
+			<div class="col-12">
+				<div class="card border-0 shadow-sm">
+					<div class="card-body">
+						<div class="row g-3">
+							<div class="col-md-6 col-lg-3">
+								<a
+									href="/admin-panel-2025/productos"
+									class="btn btn-primary w-100 btn-action"
+								>
+									<i class="bi bi-plus-circle me-2"></i>
+									Nuevo Producto
+								</a>
+							</div>
+							<div class="col-md-6 col-lg-3">
+								<a
+									href="/admin-panel-2025/proveedores"
+									class="btn btn-success w-100 btn-action"
+								>
+									<i class="bi bi-person-plus me-2"></i>
+									Nuevo Proveedor
+								</a>
+							</div>
+							<div class="col-md-6 col-lg-3">
+								<a
+									href="/admin-panel-2025/etiquetas"
+									class="btn btn-secondary w-100 btn-action"
+								>
+									<i class="bi bi-tag me-2"></i>
+									Nueva Etiqueta
+								</a>
+							</div>
+							<div class="col-md-6 col-lg-3">
+								<a
+									href="/admin-panel-2025/productos"
+									class="btn btn-warning w-100 btn-action"
+								>
+									<i class="bi bi-exclamation-triangle me-2"
+									></i>
+									Ver Bajo Stock
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<!-- Recent Activity -->
 		<div class="row g-4">
 			<!-- Recent Products -->
@@ -919,62 +971,6 @@
 								{/each}
 							</div>
 						{/if}
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Quick Actions -->
-		<div class="row mt-4" in:fly={{ y: 50, duration: 600, delay: 600 }}>
-			<div class="col-12">
-				<div class="card border-0 shadow-sm">
-					<div class="card-header bg-white border-bottom py-3">
-						<h5 class="mb-0 fw-semibold">
-							<i class="bi bi-lightning-charge text-warning me-2"
-							></i>
-							Acciones Rápidas
-						</h5>
-					</div>
-					<div class="card-body">
-						<div class="row g-3">
-							<div class="col-md-6 col-lg-3">
-								<a
-									href="/admin-panel-2025/productos"
-									class="btn btn-primary w-100 btn-action"
-								>
-									<i class="bi bi-plus-circle me-2"></i>
-									Nuevo Producto
-								</a>
-							</div>
-							<div class="col-md-6 col-lg-3">
-								<a
-									href="/admin-panel-2025/proveedores"
-									class="btn btn-success w-100 btn-action"
-								>
-									<i class="bi bi-person-plus me-2"></i>
-									Nuevo Proveedor
-								</a>
-							</div>
-							<div class="col-md-6 col-lg-3">
-								<a
-									href="/admin-panel-2025/etiquetas"
-									class="btn btn-secondary w-100 btn-action"
-								>
-									<i class="bi bi-tag me-2"></i>
-									Nueva Etiqueta
-								</a>
-							</div>
-							<div class="col-md-6 col-lg-3">
-								<a
-									href="/admin-panel-2025/productos"
-									class="btn btn-warning w-100 btn-action"
-								>
-									<i class="bi bi-exclamation-triangle me-2"
-									></i>
-									Ver Bajo Stock
-								</a>
-							</div>
-						</div>
 					</div>
 				</div>
 			</div>

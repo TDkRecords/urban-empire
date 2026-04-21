@@ -34,16 +34,19 @@
                 class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3"
             >
                 <div>
-                    <h1 class="h3 mb-0 fw-bold">
-                        <i class="bi bi-grid-fill me-2 text-primary"></i>
-                        Panel de Control
-                    </h1>
+                    <h1 class="h3 mb-0 fw-bold">Panel de Control</h1>
                     <p class="text-muted mb-0 mt-1">
                         Bienvenido de vuelta, {adminUser?.usuario}
                     </p>
                 </div>
 
                 <div class="d-flex gap-2 mt-3 mt-md-0">
+                    <a
+                        href="/admin-panel-2025/"
+                        class="btn btn-outline-primary"
+                    >
+                        <i class="bi bi-grid-fill me-1"></i> Dashboard
+                    </a>
                     <a
                         href="/admin-panel-2025/productos"
                         class="btn btn-outline-primary"
