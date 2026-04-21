@@ -2,6 +2,7 @@
     import { fly } from "svelte/transition";
 
     export let productos = [];
+    export let tags = [];
     export let onEdit = () => {};
     export let onDelete = () => {};
     export let onRestore = () => {};
@@ -13,6 +14,11 @@
             currency: "COP",
             minimumFractionDigits: 0,
         }).format(amount || 0);
+    }
+
+    function getTagName(tagId) {
+        const tag = tags.find(t => t.id === tagId);
+        return tag ? tag.nombre : tagId;
     }
 </script>
 
@@ -55,11 +61,14 @@
 
                 <!-- Contenido -->
                 <div class="card-body d-flex flex-column">
-                    <!-- Categoría -->
-                    {#if producto.categoria}
-                        <span class="badge bg-secondary mb-2 align-self-start">
-                            {producto.categoria}
-                        </span>
+                    <!-- Etiqueta -->
+                    {#if producto.etiquetas}
+                        <div class="mb-2">
+                            <span class="badge bg-primary">
+                                <i class="fas fa-tag me-1"></i>
+                                {getTagName(producto.etiquetas)}
+                            </span>
+                        </div>
                     {/if}
 
                     <!-- Nombre -->
@@ -75,6 +84,8 @@
                             {producto.descripcion}
                         </p>
                     {/if}
+
+                   
 
                     <!-- Precios y Stock -->
                     <div class="mb-3">

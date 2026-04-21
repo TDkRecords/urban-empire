@@ -27,10 +27,12 @@
 		error as notifyError,
 		confirm as notifyConfirm,
 	} from "$lib/utils/notify";
+	import { tagStats } from "$lib/services/tagService";
 
 	let stats = {
 		totalProducts: 0,
 		totalSuppliers: 0,
+		totalTags: 0,
 		lowStockProducts: 0,
 		activeSuppliers: 0,
 		deletedProducts: 0,
@@ -155,6 +157,9 @@
 				(doc) => doc.data().activo === true,
 			);
 			stats.activeSuppliers = activeSuppliers.length;
+
+			// Cargar estadísticas de etiquetas
+			stats.totalTags = $tagStats.total;
 
 			// Suscribirse a productos recientes en tiempo real
 			const recentProductsQuery = query(
@@ -289,9 +294,9 @@
 		<!-- Stats Cards con animación -->
 		{#if loading}
 			<div class="row g-4 mb-4">
-				{#each Array(4) as _, i}
+				{#each Array(5) as _, i}
 					<div
-						class="col-md-6 col-xl-3"
+						class="col-md-6 col-xl-2-4"
 						in:scale={{ duration: 300, delay: i * 100 }}
 					>
 						<div class="card stat-card h-100 border-0 shadow-sm">
@@ -310,7 +315,7 @@
 			<div class="row g-4 mb-4">
 				<!-- Total Products -->
 				<div
-					class="col-md-6 col-xl-3"
+					class="col-md-6 col-xl-2-4"
 					in:scale={{ duration: 400, delay: 0 }}
 				>
 					<div
@@ -349,7 +354,7 @@
 
 				<!-- Low Stock -->
 				<div
-					class="col-md-6 col-xl-3"
+					class="col-md-6 col-xl-2-4"
 					in:scale={{ duration: 400, delay: 100 }}
 				>
 					<div
@@ -388,7 +393,7 @@
 
 				<!-- Total Suppliers -->
 				<div
-					class="col-md-6 col-xl-3"
+					class="col-md-6 col-xl-2-4"
 					in:scale={{ duration: 400, delay: 200 }}
 				>
 					<div
@@ -427,7 +432,7 @@
 
 				<!-- Active Suppliers -->
 				<div
-					class="col-md-6 col-xl-3"
+					class="col-md-6 col-xl-2-4"
 					in:scale={{ duration: 400, delay: 300 }}
 				>
 					<div
@@ -458,6 +463,45 @@
 								>
 									<i class="bi bi-arrow-right me-1"></i>
 									Ver activos
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Total Tags -->
+				<div
+					class="col-md-6 col-xl-2-4"
+					in:scale={{ duration: 400, delay: 400 }}
+				>
+					<div
+						class="card stat-card stat-secondary h-100 border-0 shadow-sm"
+					>
+						<div class="card-body">
+							<div
+								class="d-flex justify-content-between align-items-start"
+							>
+								<div>
+									<p
+										class="text-muted mb-1 small text-uppercase fw-semibold"
+									>
+										Etiquetas Totales
+									</p>
+									<h2 class="mb-0 fw-bold">
+										{stats.totalTags}
+									</h2>
+								</div>
+								<div class="stat-icon stat-icon-secondary">
+									<i class="bi bi-tags"></i>
+								</div>
+							</div>
+							<div class="mt-3">
+								<a
+									href="/admin-panel-2025/etiquetas"
+									class="btn btn-sm btn-outline-secondary"
+								>
+									<i class="bi bi-arrow-right me-1"></i>
+									Ver todas
 								</a>
 							</div>
 						</div>
@@ -933,21 +977,21 @@
 							</div>
 							<div class="col-md-6 col-lg-3">
 								<a
+									href="/admin-panel-2025/etiquetas"
+									class="btn btn-secondary w-100 btn-action"
+								>
+									<i class="bi bi-tag me-2"></i>
+									Nueva Etiqueta
+								</a>
+							</div>
+							<div class="col-md-6 col-lg-3">
+								<a
 									href="/admin-panel-2025/productos"
 									class="btn btn-warning w-100 btn-action"
 								>
 									<i class="bi bi-exclamation-triangle me-2"
 									></i>
 									Ver Bajo Stock
-								</a>
-							</div>
-							<div class="col-md-6 col-lg-3">
-								<a
-									href="/admin-panel-2025/proveedores"
-									class="btn btn-info w-100 btn-action"
-								>
-									<i class="bi bi-people me-2"></i>
-									Gestionar Proveedores
 								</a>
 							</div>
 						</div>
@@ -961,6 +1005,11 @@
 <style>
 	.dashboard-bg {
 		background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+	}
+
+	.col-xl-2-4 {
+		flex: 0 0 20%;
+		max-width: 20%;
 	}
 
 	.stat-card {
@@ -1001,6 +1050,11 @@
 
 	.stat-icon-info {
 		background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+		color: white;
+	}
+
+	.stat-icon-secondary {
+		background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 		color: white;
 	}
 

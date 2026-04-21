@@ -5,7 +5,7 @@
     export let editingProducto = null;
     export let formData = {};
     export let formSubmitting = false;
-    export let categories = [];
+    export let tags = [];
     export let onClose = () => {};
     export let onSubmit = () => {};
 </script>
@@ -72,28 +72,25 @@
                                 ></textarea>
                             </div>
 
-                            <!-- Categoría -->
+                            <!-- Etiquetas -->
                             <div class="col-12 col-md-6">
                                 <label
-                                    for="categoria"
+                                    for="etiquetas"
                                     class="form-label fw-semibold"
                                 >
-                                    <i class="fas fa-tag me-1"></i>
-                                    Categoría
+                                    <i class="fas fa-tags me-1"></i>
+                                    Etiqueta
                                 </label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="categoria"
-                                    bind:value={formData.categoria}
-                                    placeholder="Ej: Camisetas"
-                                    list="categorias"
-                                />
-                                <datalist id="categorias">
-                                    {#each categories.filter((c) => c !== "Todas" && c !== "Sin categoría") as cat}
-                                        <option value={cat}></option>
+                                <select
+                                    class="form-select"
+                                    id="etiquetas"
+                                    bind:value={formData.etiquetas}
+                                >
+                                    <option value="">Sin etiqueta</option>
+                                    {#each tags as tag}
+                                        <option value={tag.id}>{tag.nombre}</option>
                                     {/each}
-                                </datalist>
+                                </select>
                             </div>
 
                             <!-- Stock -->

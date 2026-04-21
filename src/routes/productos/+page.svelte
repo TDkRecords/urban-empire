@@ -3,6 +3,7 @@
     import { fade, fly, scale } from "svelte/transition";
     import { cart } from "$lib/stores/cart";
     import { getProducts } from "$lib/services/productService";
+    import { tags as tagsStore } from "$lib/services/tagService";
     import { error as notifyError } from "$lib/utils/notify";
 
     let products = [];
@@ -12,6 +13,13 @@
     let loading = true;
     let error = null;
     let addingToCart = false;
+    let selectedTag = "";
+
+    // Productos filtrados
+    $: filteredProducts = products.filter(product => {
+        if (!selectedTag) return true;
+        return product.etiquetas === selectedTag;
+    });
 
     // Obtener productos de Firebase al cargar el componente
     onMount(async () => {
@@ -103,6 +111,56 @@
             </p>
         </div>
 
+        <!-- Filtro por etiquetas -->
+        {#if $tagsStore.length > 0}
+            <div class="row mb-5" in:fly={{ y: -10, duration: 400, delay: 400 }}>
+                <div class="col-12">
+                    <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
+                        <div class="card-body p-4">
+                            <div class="row align-items-end g-3">
+                                <div class="col-12 col-md-8">
+                                    <div>
+                                        <label for="tagFilter" class="form-label text-light fw-semibold mb-2">
+                                            <i class="fas fa-tag me-2" style="color: #007bff;"></i>
+                                            Filtrar por Etiqueta
+                                        </label>
+                                        <p class="text-light-50 small mb-3" style="color: rgba(255,255,255,0.7);">
+                                            Selecciona una etiqueta para filtrar productos
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <select
+                                        class="form-select form-select-lg"
+                                        id="tagFilter"
+                                        bind:value={selectedTag}
+                                        style="background-color: rgba(255,255,255,0.95); border: 2px solid #007bff; border-radius: 8px; font-weight: 500; color: #212529;"
+                                    >
+                                        <option value="">Todas las etiquetas</option>
+                                        {#each $tagsStore as tag}
+                                            <option value={tag.id}>{tag.nombre}</option>
+                                        {/each}
+                                    </select>
+                                </div>
+                            </div>
+                            {#if selectedTag}
+                                <div class="mt-3">
+                                    <button
+                                        class="btn btn-sm"
+                                        on:click={() => selectedTag = ""}
+                                        style="background-color: transparent; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.8);"
+                                    >
+                                        <i class="fas fa-times me-1"></i>
+                                        Limpiar filtro
+                                    </button>
+                                </div>
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {/if}
+
         {#if loading}
             <div class="text-center py-5">
                 <div class="spinner-border text-light" role="status">
@@ -114,7 +172,7 @@
             <div class="alert alert-danger">
                 {error}
             </div>
-        {:else if products.length === 0}
+        {:else if filteredProducts.length === 0}
             <div class="text-center py-5">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -128,14 +186,24 @@
                         d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2zm3.564 1.426L5.596 5 8 5.961 14.154 3.5zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"
                     />
                 </svg>
-                <h3 class="text-light">No hay productos disponibles</h3>
+                <h3 class="text-light">
+                    {#if selectedTag}
+                        No hay productos con esta etiqueta
+                    {:else}
+                        No hay productos disponibles
+                    {/if}
+                </h3>
                 <p class="text-light">
-                    Pronto agregaremos nuevos productos a nuestra tienda.
+                    {#if selectedTag}
+                        Prueba con otra etiqueta o <button class="btn btn-link text-light p-0" on:click={() => selectedTag = ""}>ver todos los productos</button>.
+                    {:else}
+                        Pronto agregaremos nuevos productos a nuestra tienda.
+                    {/if}
                 </p>
             </div>
         {:else}
             <div class="row row-cols-1 row-cols-md-3 g-4">
-                {#each products as product, i}
+                {#each filteredProducts as product, i}
                     <div
                         class="col"
                         in:fly={{ y: 50, duration: 600, delay: i * 100 }}

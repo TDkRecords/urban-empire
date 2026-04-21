@@ -5,7 +5,6 @@
         costoProd: 0,
         precio: 0,
         stock: 0,
-        categoria: "",
         imagen: "",
     };
 
@@ -20,7 +19,6 @@
         costoProd: product.costoProd || 0,
         precio: product.precio || 0,
         stock: product.stock || 0,
-        categoria: product.categoria || "",
         imagen: product.imagen || "",
     };
 
@@ -113,16 +111,6 @@
                     required
                 />
             </div>
-        </div>
-
-        <div class="mb-3">
-            <label for="categoria" class="form-label">Categoría</label>
-            <input
-                type="text"
-                class="form-control"
-                id="categoria"
-                bind:value={form.categoria}
-            />
         </div>
 
         <div class="mb-3">

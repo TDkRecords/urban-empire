@@ -24,6 +24,9 @@
         confirm as notifyConfirm,
     } from "$lib/utils/notify";
 
+    // Servicios
+    import { getTags, createTag, updateTag, deleteTag, tags as tagsStore } from "$lib/services/tagService";
+
     // Componentes
     import ProductSearchFilter from "./modules/ProductSearchFilter.svelte";
     import ProductGrid from "./modules/ProductGrid.svelte";
@@ -36,10 +39,10 @@
     let error = null;
     let searchTerm = "";
     let selectedCategory = "all";
-    let categories = [];
     let unsubscribe = null;
     let unsubscribeDeleted = null;
     let unsubscribeAuth = null;
+    let selectedTag = "all";
 
     // Modal y formulario
     let showModal = false;
@@ -53,20 +56,26 @@
         stock: 0,
         categoria: "",
         imagen: "",
+        etiquetas: [],
     };
 
     // Productos filtrados
     $: productosFiltrados = productos.filter((p) => {
-        const matchesSearch =
-            p.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+        p.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.descripcion?.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesCategory =
-            selectedCategory === "all" ||
-            (selectedCategory === "sin-categoria" && !p.categoria) ||
-            p.categoria === selectedCategory;
+    const matchesTag =
+        selectedTag === "all" ||
+        (selectedTag === "sin-etiqueta" && !p.etiquetas) ||
+        (p.etiquetas &&
+            p.etiquetas
+                .toLowerCase()
+                .split(",")
+                .map((t) => t.trim())
+                .includes(selectedTag.toLowerCase()));
 
-        return matchesSearch && matchesCategory;
+        return matchesSearch && matchesTag;
     });
 
     $: deletedProductsFiltrados = deletedProducts.filter((p) => {
@@ -82,13 +91,6 @@
         updateCategories();
     }
 
-    function updateCategories() {
-        const unique = [
-            ...new Set(productos.map((p) => p.categoria).filter(Boolean)),
-        ];
-        categories = ["Todas", "Sin categoría", ...unique.sort()];
-    }
-
     // Verificar autenticación
     function checkAuth() {
         if (!browser) return false;
@@ -100,29 +102,26 @@
     }
 
     // Cargar productos con onSnapshot (tiempo real)
-    function loadProducts() {
+    async function loadProducts() {
         if (!browser || !checkAuth()) return;
 
         loading = true;
         error = null;
 
         try {
-            const q = query(
-                collection(db, "productos"),
-                orderBy("nombre", "asc"),
-            );
-            const qDeleted = query(
-                collection(db, "productos_eliminados"),
-                orderBy("deletedAt", "desc"),
-            );
+            // Las etiquetas se cargan automáticamente por el store
+            const q = query(collection(db, "productos"));
+            const qDeleted = query(collection(db, "productos_eliminados"));
 
             unsubscribe = onSnapshot(
                 q,
                 (snapshot) => {
+                    console.log('Productos snapshot recibido:', snapshot.docs.length, 'documentos');
                     productos = snapshot.docs.map((doc) => ({
                         id: doc.id,
                         ...doc.data(),
                     }));
+                    console.log('Productos cargados:', productos.length);
                     loading = false;
                 },
                 (err) => {
@@ -162,6 +161,7 @@
             stock: 0,
             categoria: "",
             imagen: "",
+            etiquetas: [],
         };
         showModal = true;
     }
@@ -177,6 +177,7 @@
             stock: producto.stock || 0,
             categoria: producto.categoria || "",
             imagen: producto.imagen || "",
+            etiquetas: producto.etiquetas || [],
         };
         showModal = true;
     }
@@ -193,6 +194,7 @@
             stock: 0,
             categoria: "",
             imagen: "",
+            etiquetas: [],
         };
     }
 
@@ -367,8 +369,8 @@
         <!-- Filtros -->
         <ProductSearchFilter
             bind:searchTerm
-            bind:selectedCategory
-            {categories}
+            bind:selectedTag
+            tags={$tagsStore}
         />
 
         <!-- Mensaje de error -->
@@ -432,6 +434,7 @@
         {:else}
             <ProductGrid
                 productos={productosFiltrados}
+                tags={$tagsStore}
                 onEdit={openEditModal}
                 onDelete={handleDelete}
             />
@@ -468,6 +471,7 @@
 
                     <ProductGrid
                         productos={deletedProductsFiltrados}
+                        tags={$tagsStore}
                         onRestore={handleRestore}
                         isDeletedList={true}
                     />
@@ -483,7 +487,7 @@
     bind:editingProducto
     bind:formData
     bind:formSubmitting
-    {categories}
+    tags={$tagsStore}
     onClose={closeModal}
     onSubmit={handleSubmit}
 />

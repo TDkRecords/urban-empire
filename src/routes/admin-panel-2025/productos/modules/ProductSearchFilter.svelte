@@ -1,7 +1,7 @@
 <script>
     export let searchTerm = "";
-    export let selectedCategory = "all";
-    export let categories = [];
+    export let selectedTag = "all";
+    export let tags = [];
 </script>
 
 <div class="card shadow-sm mb-4">
@@ -20,17 +20,15 @@
                     />
                 </div>
             </div>
+
             <div class="col-12 col-md-4">
-                <select class="form-select" bind:value={selectedCategory}>
-                    {#each categories as category}
-                        <option
-                            value={category === "Todas"
-                                ? "all"
-                                : category === "Sin categoría"
-                                  ? "sin-categoria"
-                                  : category}
-                        >
-                            {category}
+                <select class="form-select" bind:value={selectedTag}>
+                    <option value="all">Todas las etiquetas</option>
+                    <option value="sin-etiqueta">Sin etiquetas</option>
+
+                    {#each tags as tag}
+                        <option value={tag.nombre}>
+                            {tag.nombre}
                         </option>
                     {/each}
                 </select>
